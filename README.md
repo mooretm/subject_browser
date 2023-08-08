@@ -1,16 +1,16 @@
-# **Yes/No Task Controller**
+# **Subject Browser**
 
 - Written by: **Travis M. Moore**
-- Latest version: **Version 0.0.0**
-- Created: **July 14, 2023**
-- Last edited: **July 19, 2023**
+- Latest version: **Version 0.1.0**
+- Created: **July 26, 2022**
+- Last edited: **August 08, 2023**
 <br>
 <br>
 
 ---
 
 ## Description
-This controller is a simple yes/no presenter; it is not adaptive. Responses can be collected using a numberpad and/or on-screen buttons. Responses are categorized as signal detection proportions (i.e., hits, misses, false alarms, correct rejections) to aid in data analysis.
+A lightweight interface to browse the participant database. 
 <br>
 <br>
 
