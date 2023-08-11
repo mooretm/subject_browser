@@ -23,7 +23,37 @@ class CSVModel:
         # Generate date stamp
         self.datestamp = datetime.now().strftime("%Y_%b_%d_%H%M")
 
-    
+
+    def save_filters(self, filepath, filters):
+        """ Write specified filter values to .csv.
+        """
+        print(f"\ncsvmodel: Filepath: {filepath}")
+        # # Create file name and path
+        # filename = f"{self.sessionpars['subject'].get()}_{self.sessionpars['condition'].get()}_{self.datestamp}.csv"
+        # self.file = Path(os.path.join(data_directory, filename))
+
+        # # Check for write access to store csv
+        # file_exists = os.access(self.file, os.F_OK)
+        # parent_writable = os.access(self.file.parent, os.W_OK)
+        # file_writable = os.access(self.file, os.W_OK)
+        # if (
+        #     (not file_exists and not parent_writable) or
+        #     (file_exists and not file_writable)
+        # ):
+        #     msg = f"\ncsvmodel: Permission denied accessing file: {filename}"
+        #     raise PermissionError(msg)
+
+        # # Write file
+
+
+
+
+
+
+
+
+
+
     def save_record(self, data):
         """ Save a dictionary of data to .csv file 
         """
@@ -36,7 +66,7 @@ class CSVModel:
             os.mkdir(data_directory)
             print(f"csvmodel: Successfully created {data_directory} " +
                   "directory!")
-        
+
         # Create file name and path
         filename = f"{self.sessionpars['subject'].get()}_{self.sessionpars['condition'].get()}_{self.datestamp}.csv"
         self.file = Path(os.path.join(data_directory, filename))

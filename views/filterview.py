@@ -38,7 +38,10 @@ class FilterView(ttk.Frame):
         self.operators = ["equals", "does not equal", "contains", ">", ">=", 
             "<", "<="]
 
+        self._draw_widgets()
 
+
+    def _draw_widgets(self):
         #################
         # Create Frames #
         #################
@@ -49,32 +52,34 @@ class FilterView(ttk.Frame):
         style = ttk.Style()
         style.configure("rec.TLabel", foreground='green')
 
+
+        #################
+        # Create Frames #
+        #################
         # Frame options
         options = {'padx':10, 'pady':10}
 
-        # Create frames
+        # Main frame
         frm_filter = ttk.Frame(self)
         frm_filter.grid(row=0, column=0, sticky='nsew')
         # Set columns to expand
         frm_filter.columnconfigure(index=1, weight=1)
         frm_filter.columnconfigure(index=2, weight=1)
         frm_filter.columnconfigure(index=3, weight=1)
-        # Set rows to expand
-        #rows = range(0,30)
-        #for row in rows:
-        #    frm_filter.rowconfigure(index=row, weight=1)
 
-        frm_output = ttk.Frame(self)
-        frm_output.grid(row=21, column=0, **options, 
-            sticky='nsew')
-        #for ii in range(1,4):
-        #    frm_output.columnconfigure(index=ii, weight=1)
-        frm_output.columnconfigure(index=1, weight=1)
-
+        # Options frame
         frm_options = ttk.LabelFrame(frm_filter, text="Options")
         frm_options.grid(row=2, column=1, padx=10, pady=(10,0),
             sticky='nsew')
+        # Set columns to expand
         frm_options.columnconfigure(index=1, weight=1)
+        
+        # Output textbox frame
+        frm_output = ttk.Frame(self)
+        frm_output.grid(row=21, column=0, **options, 
+            sticky='nsew')
+        # Set columns to expand
+        frm_output.columnconfigure(index=1, weight=1)
 
 
         ############
@@ -94,7 +99,7 @@ class FilterView(ttk.Frame):
 
         # Filter button
         ttk.Button(frm_filter, text="Filter Records", 
-            command=self._do_filter).grid(row=20, column=2, sticky='ew')
+            command=self._on_filter).grid(row=20, column=2, sticky='ew')
 
         # Text widget for displaying filtering results
         self.txt_output = tk.Text(frm_output, height=10)
@@ -126,8 +131,9 @@ class FilterView(ttk.Frame):
         self.value_vars = []
         self.value_cbs = []
 
+        # Create all comboboxes
         for ii in range(0, num_fields):
-            # Attribute comboboxes:
+            # Database attribute comboboxes
             # Append next unique ID to list
             self.attrib_vars.append(uuid.uuid4())
             # Assign unique ID to string variable
@@ -137,7 +143,7 @@ class FilterView(ttk.Frame):
                 textvariable=self.attrib_vars[ii], takefocus=0)
             # Show combobox
             cb_attrib.grid(row=6+ii, column=1, pady=(0,10), padx=10,
-                sticky='nwew')
+                sticky='nsew')
             # Populate combobox
             cb_attrib['values'] = self.attributes
             # Append combobox to list
@@ -158,7 +164,7 @@ class FilterView(ttk.Frame):
             # Append combobox to list
             self.op_cbs.append(cb_op)
 
-            # Value comboboxes:
+            # Database value comboboxes:
             # Append next unique ID to list
             self.value_vars.append(uuid.uuid4())
             # Assign unique ID to string variable
@@ -166,7 +172,7 @@ class FilterView(ttk.Frame):
             # Create combobox with above variable
             cb_value = ttk.Combobox(frm_filter, 
                 textvariable=self.value_vars[ii],
-                postcommand=self.get_values, takefocus=0)
+                postcommand=self._get_values, takefocus=0)
             # Show combobox
             cb_value.grid(row=6+ii, column=3, pady=(0,10), padx=10,
                 sticky='nsew')
@@ -174,105 +180,11 @@ class FilterView(ttk.Frame):
             self.value_cbs.append(cb_value)
 
 
-    #############
-    # Functions #
-    #############
-    def get_values(self, *_):
-        """ Get values to populate value comboboxes based on the selected 
-            attribute in the attribute comboboxes
-        """
-        for ii in range(0, len(self.attrib_cbs)):
-            if self.attrib_cbs[ii].get():
-                unique_vals = list(self.db.data[self.attrib_cbs[ii].get()].unique())
-                unique_vals.sort()
-                try:
-                    unique_vals.remove('-')
-                except ValueError:
-                    print("filterview: No '-' found in value list.")
-                self.value_cbs[ii]['values'] = unique_vals
-
-
-    def _do_filter(self):
-        """ Update filter dict based on provided combobox values.
-            Send filter event to controller.
-        """
-        # Get values from all comboboxes
-        self._get_filter_vals()
-
-        # Send event to controller to filter
-        self.event_generate('<<Filter>>')
-
-
-    def _get_filter_vals(self):
-        """ Create a dictionary of filter values from combobox values. 
-            Check for missing values and skipped rows.
-        """
-        all_data = []
+    #####################
+    # General Functions #
+    #####################
+    def clear_output(self):
         self.txt_output.delete('1.0', tk.END)
-
-        for ii in range(0, len(self.attrib_cbs)):
-            # Check for any empty values in a given row
-            if (not self.attrib_vars[ii].get()) \
-                or (not self.op_vars[ii].get()) \
-                or (not self.value_vars[ii].get()):
-                # Check whether entire row is empty
-                if (not self.attrib_vars[ii].get()) \
-                    and (not self.op_vars[ii].get()) \
-                    and (not self.value_vars[ii].get()):
-                    pass # do nothing if entire row is empty
-                else:
-                    # If some values in a row are missing, 
-                    # display message and exit
-                    print("Missing values!")
-                    messagebox.showerror(title="Missing Values",
-                        message="There are missing values!",
-                        detail="Please provide all filter parameters " +
-                            "for a given row."
-                    )
-                    return
-            else:
-                # Create list from values if 'contains' operator
-                # Create new 'value' variable because tk.StringVar
-                # cannot hold a list
-                if self.op_vars[ii].get() == "contains":
-                    value = self.value_vars[ii].get().split()
-                else:
-                    value = self.value_vars[ii].get()
-
-
-                ###############################
-                # Patch for Subject Id #
-                ###############################
-                if self.attrib_vars[ii].get() == 'Subject Id':
-                    if isinstance(value, str):
-                        value = int(value)
-                    elif isinstance(value, list):
-                        value = [int(x) for x in value]
-                ###################################
-                # End Patch for Subject Id #
-                ###################################
-
-
-                # If all values are present in a given row, append to list
-                all_data.append((
-                    self.attrib_vars[ii].get(), 
-                    self.op_vars[ii].get(), 
-                    #self.value_vars[ii].get()
-                    value
-                ))
-                try:
-                    # Update dictionary with list by index
-                    self.filter_dict[ii] = all_data[ii]
-                except IndexError:
-                    # If indexes do not match, there was an empty row 
-                    # between rows with values: display message and 
-                    # exit
-                    messagebox.showerror(title="Empty Rows",
-                        message="One or more rows has been skipped!",
-                        detail="There cannot be empty rows between rows " +
-                            "with values."
-                    )
-                    return
 
 
     def _clear_filters(self):
@@ -283,7 +195,7 @@ class FilterView(ttk.Frame):
         self.filter_dict = {}
 
         # Delete any output from textbox
-        self.txt_output.delete('1.0', tk.END)
+        self.clear_output()
 
         # Clear all combobox values
         for ii in range(0, len(self.attrib_cbs)):
@@ -316,3 +228,115 @@ class FilterView(ttk.Frame):
     #             detail="All filters will still be applied, but they " +
     #                 "will not be displayed.")
     #         raise IndexError
+
+
+    ##############################
+    # Filter Selection Functions #
+    ##############################
+    def _get_values(self, *_):
+        """ Get values to populate value comboboxes based on the selected 
+            attribute in the attribute comboboxes
+        """
+        # Loop through number of comboboxes set in num_fields above
+        for ii in range(0, len(self.attrib_cbs)):
+            # If the user did not specify any values in a combobox, skip it
+            if len(self.attrib_cbs[ii].get()) != 0:
+                # Drop "NaN" from df and grab unique values as list
+                unique_vals = list(
+                    self.db.data[self.attrib_cbs[ii].get()].dropna().unique()
+                    )
+                # Remove non-data fields
+                if '-' in unique_vals:
+                    unique_vals.remove('-')
+
+                # Sort the unique data values
+                unique_vals.sort()
+
+                # Assign the unique values to the Values combobox
+                self.value_cbs[ii]['values'] = unique_vals
+                #print(f"\nfilterview: Added {self.attrib_cbs[ii].get()} to value combobox")
+
+
+    ###################################
+    # Filter Implementation Functions #
+    ###################################
+    def _on_filter(self):
+        """ Update filter dict based on provided combobox values.
+            Send filter event to controller.
+        """
+        # Get values from all comboboxes
+        self._make_filter_dict()
+
+        # Send event to controller to filter
+        self.event_generate('<<FilterviewFilter>>')
+
+
+    def _make_filter_dict(self):
+        """ Create a dictionary of filter values from combobox values. 
+            Check for missing values and skipped rows.
+        """
+        all_data = []
+        self.clear_output()
+
+        for ii in range(0, len(self.attrib_cbs)):
+            # Check for any empty values in a given row
+            if (not self.attrib_vars[ii].get()) \
+                or (not self.op_vars[ii].get()) \
+                or (not self.value_vars[ii].get()):
+                # Check whether entire row is empty
+                if (not self.attrib_vars[ii].get()) \
+                    and (not self.op_vars[ii].get()) \
+                    and (not self.value_vars[ii].get()):
+                    pass # do nothing if entire row is empty
+                else:
+                    # If some values in a row are missing, 
+                    # display message and exit
+                    print("Missing values!")
+                    messagebox.showerror(title="Missing Values",
+                        message="There are missing values!",
+                        detail="Please provide all filter parameters " +
+                            "for a given row."
+                    )
+                    return
+            else:
+                # Create list from values if 'contains' operator
+                # Create new 'value' variable because tk.StringVar
+                # cannot hold a list
+                if self.op_vars[ii].get() == "contains":
+                    value = self.value_vars[ii].get().split()
+                    # Convert each list element to float, if possible
+                    try:
+                        value = [float(x) for x in value]
+                    except ValueError:
+                        # Cannot convert string to float
+                        pass
+                else:
+                    value = self.value_vars[ii].get()
+                    # Convert value to float, if possible
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        # Cannot convert string to float
+                        pass
+
+                # If all values are present in a given row, append to list
+                all_data.append(
+                    (
+                    self.attrib_vars[ii].get(), 
+                    self.op_vars[ii].get(), 
+                    value
+                    )
+                )
+                try:
+                    # Update dictionary with list by index
+                    self.filter_dict[ii] = all_data[ii]
+                except IndexError:
+                    # If indexes do not match, there was an empty row 
+                    # between rows with values: display message and 
+                    # exit
+                    messagebox.showerror(title="Empty Rows",
+                        message="One or more rows has been skipped!",
+                        detail="There cannot be empty rows between rows " +
+                            "with values."
+                    )
+                    return

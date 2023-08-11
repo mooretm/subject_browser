@@ -41,11 +41,20 @@ class FilterList:
         for key in keys:
             # Check for lists
             if filter_df.loc[1,key] == 'contains':
-                #filter_list = ast.literal_eval(filter_df.loc[2,key])
-                #value = ' '.join(filter_list)
                 value = ast.literal_eval(filter_df.loc[2,key])
+                try:
+                    value = [float(x) for x in value]
+                except ValueError:
+                    # Cannot convert string to float
+                    pass
             else:
                 value = filter_df.loc[2,key]
+                # Convert value to float, if possible
+                try:
+                    value = float(value)
+                except ValueError:
+                    # Cannot convert string to float
+                    pass
             # Assign values to dict
             filter_dict[key] = (filter_df.loc[0,key],
                         filter_df.loc[1,key],
@@ -53,32 +62,6 @@ class FilterList:
             )
 
         return filter_dict
-
-
-    # def import_filter_dict(self):
-    #     # Query user for filter .csv file
-    #     filename = filedialog.askopenfilename()
-    #     # Do nothing if cancelled
-    #     if not filename:
-    #         return
-    #     # If a valid filename is found, load it
-    #     filter_df = pd.read_csv(filename)
-
-    #     # Create filter dict
-    #     keys = list(filter_df.columns)
-    #     filter_dict = {}
-    #     for key in keys:
-    #         # Check for lists
-    #         if filter_df.loc[1,key] == 'contains':
-    #             value = ast.literal_eval(filter_df.loc[2,key])
-    #         else:
-    #             value = filter_df.loc[2,key]
-    #         # Assign remaining values to dict
-    #         filter_dict[key] = (filter_df.loc[0,key],
-    #                     filter_df.loc[1,key],
-    #                     value
-    #         )
-    #     return filter_dict
 
 
     def export_filters(self, filter_dict):
@@ -112,7 +95,7 @@ class FilterList:
 
             # Write data to .csv file if a valid save path is given
             filter_df.to_csv(save_path, mode='w', index=False)
-            print("Filters successfully written to file!")
+            print("Filters successfully written to file.")
         except AttributeError:
             # Do nothing if cancelled
             return

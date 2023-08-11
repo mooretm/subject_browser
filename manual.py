@@ -6,7 +6,7 @@ conn = sqlite3.connect(r'C:\Users\MooTra\OneDrive - Starkey\Desktop\Subjects.db'
 
 # Load CSV data into Pandas DataFrame
 # Expects a FULL database exported from Subject Browser
-sub_data = pd.read_csv(r'C:\Users\MooTra\OneDrive - Starkey\Desktop\Full Clean.csv')
+sub_data = pd.read_csv(r'C:\Users\MooTra\OneDrive - Starkey\Desktop\Exported Full DB.csv')
 
 # Replace spaces in column names with underscores
 new_names = []
@@ -16,7 +16,6 @@ sub_data.columns = new_names
 
 # Replace '-' with Python None
 sub_data = sub_data.replace('-', None)
-#sub_data.iloc[:,8].astype('float')
 
 # Write the data to a sqlite table
 try:

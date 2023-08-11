@@ -4,6 +4,7 @@
     from the online subject database. 
 
     Author: Travis M. Moore
+    Last edited: Aug 08, 2023
  """
 
 ###########
@@ -19,8 +20,6 @@ import matplotlib.pyplot as plt
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 # Import system packages
 from datetime import datetime
@@ -43,34 +42,19 @@ class SubDB:
         self.load_db(db_path)
 
 
-    #####################
-    # General Functions #
-    #####################
-    def load_filtered_db(self, db_path):
-        # Import .csv file of database records
-        self.data = pd.read_csv(db_path)
-
-        # Convert age back to string after importing 
-        # a previously-exported database .csv file
-        self.data['Age'] = self.data['Age'].astype('str')
-
-        # Convert all values back to strings
-        #self.data = self.data.astype(str)
-        # Pretty sure everything is loaded in as an object data type?
-
-        # Provide feedback
-        print("\ndbmodel: Loaded database records")
-        print(f"dbmodel: Remaining candidates: {self.data.shape[0]}\n")
-
-
+    #################################
+    # Import and Clean Raw Database #
+    #################################
     def load_db(self, db_path):
-        """ Read database .csv provided from filedialog browser
+        """ Read raw database .csv from Star.
+            Select desired columns only.
+            Clean: convert to numeric, rename cols, fix max thresholds.
         """
         # Import .csv file of database records
         general_search = pd.read_csv(db_path)
 
         # Define columns of interest
-        cols_general = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
+        desired_cols = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
                         16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 
                         29, 30, 31, 32, 33, 34, 35, 36, 38, 40, 42, 49, 51, 
                         52, 74, 85, 86, 88, 90, 101,102,103,104, 109, 112, 
@@ -80,7 +64,7 @@ class SubDB:
                         202, 204]
 
         # New dataframe with columns of interest only
-        short_gen = general_search[general_search.columns[cols_general]].copy()
+        short_gen = general_search[general_search.columns[desired_cols]].copy()
 
         # Correct column names
         short_gen.rename(columns = {
@@ -97,25 +81,56 @@ class SubDB:
 
         # Calculate age and store in new dataframe column
         short_gen['Age'] = short_gen['Date Of Birth'].apply(
-            lambda x: self.calc_age(x))
+            lambda x: self._calc_age(x))
 
-        # Convert Age column back to string
-        short_gen['Age'] = short_gen['Age'].astype("str")
+        # Coerce columns with numerical data to numeric
+        cols = [0,8,9,10,11,12,13,14,15,16,17,22,23,24,25,26,27,28,29,
+                30,31,36,40,47,48,49,50,51,53,56,57,59,61,62,64,66,67,
+                68,69,71,72,85]
+        short_gen.iloc[:, cols] = short_gen.iloc[:, cols].apply(
+            pd.to_numeric, errors='coerce')
 
         # Sort dataframe by subject ID
         self.data = short_gen.sort_values(by='Subject Id').reset_index(
-            drop=True)
+            drop=True).copy()
+
+        # Change all audiogram thresholds above 120 to NaN
+        # Generate column names
+        audio_cols = self._audio_col_names()
+        # Replace values
+        for col in audio_cols:
+            self.data.loc[self.data[col] > 120, col] = np.NaN
+
+        # Convert all '%null' values to '-'
+        self.data.replace(to_replace='%null%', value='-', inplace=True)
 
         # Provide feedback
-        print("\ndbmodel: Loaded database records")
+        print("\ndbmodel: Loaded database.")
         print(f"dbmodel: Remaining candidates: {self.data.shape[0]}")
 
-        # Get rid of junk records
-        #self._initial_scrub()
+
+    def _audio_col_names(self):
+        """ Create column names for air and bone conduction
+            thresholds.
+        """
+        audio_cols = []
+        # Air conduction
+        sides = ['RightAC ', 'LeftAC ']
+        freqs = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000]
+        for side in sides:
+            for freq in freqs:
+                audio_cols.append(side + str(freq))
+        # Bone conduction
+        sides = ['RightBC ', 'LeftBC ']
+        freqs = [500, 1000, 2000, 4000]
+        for side in sides:
+            for freq in freqs:
+                audio_cols.append(side + str(freq))
+        return audio_cols
 
 
-    def calc_age(self, birthdate):
-        """ Convert birthdate to ages
+    def _calc_age(self, birthdate):
+        """ Convert birthdate to age.
         """
         today = datetime.now()
         x = str(birthdate).split('/')
@@ -131,25 +146,60 @@ class SubDB:
         return age
 
 
-    def _initial_scrub(self):
-        """ Perform perfunctory filtering 
+    def load_filtered_db(self, db_path):
+        """ Import a previously-exported database.
         """
-        # Remove internal employees
-        self.data = self.data[self.data["Employment Status"] != "Employee"]
-        print(f"Automatically removed internal Starkey employees")
-        print(f"Remaining candidates: {self.data.shape[0]}\n")
+        # Import .csv file of database records
+        self.data = pd.read_csv(db_path)
 
-        # Remove inactive records
-        self.data = self.data[self.data["Status"] == "Active"]
-        print(f"Automatically removed inactive participants")
-        print(f"Remaining candidates: {self.data.shape[0]}\n")
+        # Provide feedback
+        print("\ndbmodel: Loaded previously exported database.")
+        print(f"dbmodel: Remaining candidates: {self.data.shape[0]}")
 
-        # Remove poor candidates
-        self.data = self.data[self.data["Good Candidate"].isin(["-", 
-            "Excellent", "Good", "Fair"])]
-        print(f"Automatically removed poor candidates")
-        print(f"Remaining candidates: {self.data.shape[0]}\n")
 
+    # def _initial_scrub(self):
+    #     """ Perform perfunctory filtering 
+    #     """
+    #     # Remove internal employees
+    #     self.data = self.data[self.data["Employment Status"] != "Employee"]
+    #     print(f"Automatically removed internal Starkey employees")
+    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
+
+    #     # Remove inactive records
+    #     self.data = self.data[self.data["Status"] == "Active"]
+    #     print(f"Automatically removed inactive participants")
+    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
+
+    #     # Remove poor candidates
+    #     self.data = self.data[self.data["Good Candidate"].isin(["-", 
+    #         "Excellent", "Good", "Fair"])]
+    #     print(f"Automatically removed poor candidates")
+    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
+
+    # def _initial_scrub(self):
+    #     """ Perform perfunctory junk record removal
+    #     """
+    #     # Clear any previous output from textbox
+    #     self.filter_view.txt_output.delete('1.0', tk.END)
+    #     # Provide feedback
+    #     self.filter_view.txt_output.insert(tk.END, 
+    #             f"controller: Loaded database records" +
+    #             f"controller: Remaining Candidates: {str(self.db.data.shape[0])}")
+        
+    #     # Scroll to bottom of text box
+    #     self.filter_view.txt_output.yview(tk.END)
+
+    #     # Create dictionary of filtering values
+    #     scrub_dict = {
+    #         1: ("Status", "equals", "Active"),
+    #         2: ("Good Candidate", "does not equal", "Poor"),
+    #         3: ("Employment Status", "does not equal", "Employee"),
+    #         4: ("Miles From Starkey", "<=", "60")
+    #     }
+    #     # Call filtering function
+    #     self._filter(scrub_dict)
+    #     # Update tree widget after filtering
+    #     self.browser_view.load_tree()
 
     def write(self):
         """ Save database to .csv"""
@@ -175,23 +225,19 @@ class SubDB:
 
         # Write data to .csv file if a valid save path is given
         self.data.to_csv(save_path, mode='w', index=False)
-        print("Database successfully written to file!")
+        print("\ndbmodel: Database successfully written to file!")
 
 
     #######################
     # Filtering Functions #
     #######################
     def filter(self, colname, operator, value):
-        # Remove rows containing "-" (i.e., no data)
-        #self.data = self.data[self.data[colname] != "-"]
-        # Check data type of value
-        #if isinstance(value, int):
-        #    self.data[colname] = self.data[colname].astype("int")
-        #elif isinstance(value, float):
-        #    self.data[colname] = self.data[colname].astype("float")
+        # Drop "NaNs" and other non-data from column
+        #df = self.data.copy()
+        #df[colname].dropna()
+        #df = df[~df[colname].isin(['-', '%null%', np.NaN])]
 
-        # Perform filtering
-        # NOTE: Add OR condition to include '-' values for every operator?
+        # Filter
         if operator == "equals":
             self.data = self.data[self.data[colname] == value]
         if operator == "does not equal":
@@ -206,35 +252,36 @@ class SubDB:
             self.data = self.data[self.data[colname] <= value]
         if operator == "contains":
             self.data = self.data[self.data[colname].isin(value)]
-        print(f"Filtered column '{colname}' for '{value}'")
-        print(f"Remaining candidates: {self.data.shape[0]}\n")
+        print(f"\ndbmodel: Filtered column '{colname}' for '{value}'")
+        print(f"dbmodel: Remaining candidates: {self.data.shape[0]}")
 
 
-    def ac_thresh_filt(self, thresh_dict):
-        """ Filter by right/left air conduction thresholds. 
-            Expects dict of frequencies with tuple of lower
-            and upper threshold limits.
-        """
-        sides = ["RightAC", "LeftAC"]
-        for side in sides:
-            for key in thresh_dict:
-                # Construct column name
-                colname = side + " " + key
-                # Remove rows containing "-" (i.e., no data)
-                self.data = self.data[self.data[colname] != "-"]
-                # Convert column to int
-                self.data[colname] = self.data[colname].astype("int")
-                # Exclude thresholds above dict value 1
-                self.data = self.data[self.data[colname] <= thresh_dict[key][1]]
-                # Exclude thresholds below dict value 0
-                self.data = self.data[self.data[colname] >= thresh_dict[key][0]]
+    # def ac_thresh_filt(self, thresh_dict):
+    #     """ Filter by right/left air conduction thresholds. 
+    #         Expects dict of frequencies with tuple of lower
+    #         and upper threshold limits.
+    #     """
+    #     sides = ["RightAC", "LeftAC"]
+    #     for side in sides:
+    #         for key in thresh_dict:
+    #             # Construct column name
+    #             colname = side + " " + key
+    #             # Remove rows containing "-" (i.e., no data)
+    #             self.data = self.data[self.data[colname] != "-"]
+    #             # Convert column to int
+    #             self.data[colname] = self.data[colname].astype("int")
+    #             # Exclude thresholds above dict value 1
+    #             self.data = self.data[self.data[colname] <= thresh_dict[key][1]]
+    #             # Exclude thresholds below dict value 0
+    #             self.data = self.data[self.data[colname] >= thresh_dict[key][0]]
 
-        print("Filtered by provided air conduction threshold limits")
-        print(f"Remaining candidates: {self.data.shape[0]}\n")
+    #     print("Filtered by provided air conduction threshold limits")
+    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
 
 
     def get_thresholds(self, sub_id):
-        """ Make a dictionary of subject thresholds """
+        """ Make dictionaries for air and bone conduction thresholds.
+        """
         # Get AC thresholds
         sides = ["RightAC", "LeftAC"]
         freqs = [250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000]
@@ -245,7 +292,10 @@ class SubDB:
                 #ac.append(self.data[self.data['Subject Id'] == sub_id][colname].astype(int))
                 try:
                     ac[side + ' ' + str(freq)] = int(
-                        self.data[self.data['Subject Id'] == sub_id][colname].values[0])
+                        self.data[self.data['Subject Id'] == sub_id][colname].values[0]
+                    )
+                    #if ac[side + ' ' + str(freq)] > 120:
+                    #    ac[side + ' ' + str(freq)] = None
                 except:
                     ac[side + ' ' + str(freq)] = None
 
@@ -278,6 +328,9 @@ class SubDB:
             for key, value in dict(thresholds[ii]).items():
                 if value is None:
                     del thresholds[ii][key]
+
+
+
 
         # Plot audiogram: METHOD 1
         # Plot AC thresholds
@@ -369,8 +422,8 @@ class SubDB:
     # Acoustic Coupling Functions #
     ###############################
     def coupling(self, sub_id):
-        """ Return ProFit recommended coupling and vent size"""
-
+        """ Calculate Pro Fit recommended coupling and vent size.
+        """
         # Get subject thresholds
         ac, bc = self.get_thresholds(sub_id)
 
@@ -443,7 +496,6 @@ class SubDB:
             except TypeError:
                 coupling[side[:-3]] = '-'
 
-
             # RIC (and custom) vent size
             if coupling[side[:-3]] == 'Earmold':
                 # Get average threshold at 500 and 1000 Hz
@@ -465,7 +517,9 @@ class SubDB:
     def update_label_vars(self, _vars, record):
         """ Populate _vars with data from provided record number.
         """
+        # Assign variables
         self._vars = _vars
+
         # Attempt to parse study name and dates
         # Multiple pieces of information in a single cell
         latest_study = self.data[self.data['Subject Id'] == record]['Latest Study'].values[0]
@@ -487,12 +541,8 @@ class SubDB:
             self._vars['l_matrix'].set(matrix['Left'])
             self._vars['r_matrix'].set(matrix['Right'])
         except TypeError as e:
-            print(e)
-            print("browserview: Error!")
-            # messagebox.showerror(title="Error!",
-            #     message="An error occurred calculating the coupling type!",
-            #     detail="Cannot determine the recommendation threshold."
-            # )
+            print(f"\ndbmodel: {e}")
+            print("dbmodel: Failed to calculate coupling type!")
 
         dict = {
             'age': 'Age',
@@ -509,13 +559,15 @@ class SubDB:
 
         for key in dict.keys():
             try:
-                self._vars[key].set(
-                    self.data[self.data['Subject Id'] == \
-                                record][dict[key]].values[0])
+                if dict[key] in ['Age', 'Miles From Starkey', 'Right Ric Cable Size', 'Left Ric Cable Size']:
+                    try:
+                        self._vars[key].set(int(self.data[self.data['Subject Id'] == record][dict[key]].values[0]))
+                    except ValueError as e:
+                        self._vars[key].set('-')
+                else:
+                    self._vars[key].set(self.data[self.data['Subject Id'] == record][dict[key]].values[0])
             except KeyError as e:
-                print(f"browserview: KeyError: value not in list{e}")
-
-
+                print(f"dbmodel: KeyError: value not in list{e}")
 
 
 class DataModel:

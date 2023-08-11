@@ -47,12 +47,12 @@ class MainMenu(tk.Menu):
         )
         self.file_menu.add_separator()
         self.file_menu.add_command(
-            label="Import Filter List...",
-            command=self._event('<<FileImportList>>')
+            label="Import Filter Values...",
+            command=self._event('<<FileImportFilterVals>>')
         )
         self.file_menu.add_command(
-            label="Export Filter List...",
-            command=self._event('<<FileExportList>>')
+            label="Export Filter Values...",
+            command=self._event('<<FileExportFilterVals>>')
         )
         self.file_menu.add_separator()
         self.file_menu.add_command(
@@ -67,6 +67,11 @@ class MainMenu(tk.Menu):
         # Tools menu #
         ##############
         tools_menu = tk.Menu(self, tearoff=False)
+        tools_menu.add_command(
+            label='Plot Group Audio',
+            command=self._event('<<ToolsPlotGroupAudio>>')
+        )
+        tools_menu.add_separator()
         tools_menu.add_command(
             label='Reset Filters',
             command=self._event('<<ToolsReset>>')
