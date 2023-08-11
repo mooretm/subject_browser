@@ -187,7 +187,7 @@ class FilterView(ttk.Frame):
         self.txt_output.delete('1.0', tk.END)
 
 
-    def _clear_filters(self):
+    def clear_filters(self):
         """ Clear all values from the filter comboboxes.
             Reset filter dict to empty.
         """

@@ -71,20 +71,15 @@ class MainMenu(tk.Menu):
             label='Plot Group Audio',
             command=self._event('<<ToolsPlotGroupAudio>>')
         )
+        tools_menu.add_command(
+            label='Plot Ear Specific Group Audio',
+            command=self._event('<<ToolsPlotEarSpecificGroupAudio>>')
+        )
         tools_menu.add_separator()
         tools_menu.add_command(
             label='Reset Filters',
             command=self._event('<<ToolsReset>>')
         )
-        # tools_menu.add_command(
-        #     label='Audio Settings...',
-        #     command=self._event('<<ToolsAudioSettings>>')
-        # )
-        # tools_menu.add_separator()
-        # tools_menu.add_command(
-        #     label='Calibration...',
-        #     command=self._event('<<ToolsCalibration>>')
-        # )
         # Add Tools menu to the menubar
         self.add_cascade(label="Tools", menu=tools_menu)
 

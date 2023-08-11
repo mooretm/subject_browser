@@ -176,30 +176,6 @@ class SubDB:
     #     print(f"Automatically removed poor candidates")
     #     print(f"Remaining candidates: {self.data.shape[0]}\n")
 
-    # def _initial_scrub(self):
-    #     """ Perform perfunctory junk record removal
-    #     """
-    #     # Clear any previous output from textbox
-    #     self.filter_view.txt_output.delete('1.0', tk.END)
-    #     # Provide feedback
-    #     self.filter_view.txt_output.insert(tk.END, 
-    #             f"controller: Loaded database records" +
-    #             f"controller: Remaining Candidates: {str(self.db.data.shape[0])}")
-        
-    #     # Scroll to bottom of text box
-    #     self.filter_view.txt_output.yview(tk.END)
-
-    #     # Create dictionary of filtering values
-    #     scrub_dict = {
-    #         1: ("Status", "equals", "Active"),
-    #         2: ("Good Candidate", "does not equal", "Poor"),
-    #         3: ("Employment Status", "does not equal", "Employee"),
-    #         4: ("Miles From Starkey", "<=", "60")
-    #     }
-    #     # Call filtering function
-    #     self._filter(scrub_dict)
-    #     # Update tree widget after filtering
-    #     self.browser_view.load_tree()
 
     def write(self):
         """ Save database to .csv"""
@@ -279,6 +255,9 @@ class SubDB:
     #     print(f"Remaining candidates: {self.data.shape[0]}\n")
 
 
+    ######################
+    # Plotting Functions #
+    ######################
     def get_thresholds(self, sub_id):
         """ Make dictionaries for air and bone conduction thresholds.
         """
@@ -329,34 +308,6 @@ class SubDB:
                 if value is None:
                     del thresholds[ii][key]
 
-
-
-
-        # Plot audiogram: METHOD 1
-        # Plot AC thresholds
-        # for key, value in dict(ac).items():
-        #     if "Right" in key:
-        #         print(key, value)
-        #         ax.plot(int(key.split()[1]), value, color='red', marker='o')
-        #     elif "Left" in key:
-        #         ax.plot(int(key.split()[1]), value, color='blue', marker='x')
-        
-        # Plot audiogram: METHOD 2
-        # Plot AC thresholds
-        # keys = ac.keys()
-        # right_ac_freqs = []
-        # right_ac_thresh = []
-        # left_ac_freqs = []
-        # left_ac_thresh = []
-        # for key in keys:
-        #     if "Right" in key:
-        #         right_ac_freqs.append((int(key.split()[1])))
-        #         right_ac_thresh.append(ac[key])
-        #     elif "Left" in key:
-        #         left_ac_freqs.append((int(key.split()[1])))
-        #         left_ac_thresh.append(ac[key])
-        
-        # Plot audiogram: METHOD 3
         # Plot AC thresholds
         x = list(ac.items())
         right_ac_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
@@ -416,6 +367,99 @@ class SubDB:
             # Fill polygon
             ax.fill(xs,ys, edgecolor='none', 
                 facecolor=audio_colors[idx], alpha=alpha_val)
+
+
+    #########################
+    # Group Audiogram Plots #
+    #########################
+    def _get_audio_thresholds(self):
+        # Create list of all audiogram column names
+        all_audio_cols = self._audio_col_names()
+        # Remove bone conduction column names
+        air_data = [x for x in all_audio_cols if "B" not in x]
+        # Get list of right air conduction column names
+        right = [x for x in air_data if "Right" in x]
+        # Get list of left air conduction column names
+        left = [x for x in air_data if "Left" in x]
+
+        # Create df of right audiogram data
+        df_right = self.data[right]
+        df_right.columns = [int(x.split()[1]) for x in df_right.columns]
+        # Create df of left audiogram data
+        df_left = self.data[left]
+        df_left.columns = [int(x.split()[1]) for x in df_left.columns]
+        # Concatenate left/right audiogram thresholds dfs
+        thresholds = pd.concat([df_right, df_left]).reset_index(drop=True)
+        
+        return thresholds, df_right, df_left
+
+
+    def plot_group_audio(self):
+        """ Plot overlaid audiograms for each subject 
+            currently in self.data.
+        """
+        # Call audiogram plot axis
+        ax = self._group_audio_axis()
+        thresholds, right, left = self._get_audio_thresholds()
+        ax.set_title(f"Audiograms (n={int(thresholds.shape[0]/2)})")
+
+        # Plot individual thresholds
+        for ii in range(0, len(thresholds)):
+            # Create mask to account for NaNs
+            vals = thresholds.iloc[ii,:]
+            mask = np.isfinite(vals)
+            ax.plot(vals[mask].index, vals[mask], color='dimgrey')
+
+        # Plot average thresholds
+        avg = thresholds.mean()
+        ax.plot(avg.index, avg, color='red', linestyle='--', linewidth=5)
+        plt.show()
+
+
+    def plot_ear_specific_group_audio(self):
+        """ Plot overlaid audiograms for each subject 
+            currently in self.data.
+        """
+        # Call audiogram plot axis
+        ax = self._group_audio_axis()
+        thresholds, right, left = self._get_audio_thresholds()
+        ax.set_title(f"Audiograms (n={int(thresholds.shape[0]/2)})")
+
+        # # Plot individual thresholds
+        # for ii in range(0, len(thresholds)):
+        #     # Create mask to account for NaNs
+        #     vals = thresholds.iloc[ii,:]
+        #     mask = np.isfinite(vals)
+        #     ax.plot(vals[mask].index, vals[mask], color='dimgrey')
+
+        # Plot individual thresholds
+        for row in range(0, left.shape[0]):
+            ax.plot(list(left.columns), list(left.iloc[row, :]), color='blue')
+            ax.plot(list(right.columns), list(right.iloc[row, :]), color='red')
+
+        # Plot average thresholds
+        ax.plot(list(left.columns), thresholds.mean(), marker='o', color='black', 
+            markersize=7, linestyle='None')
+        plt.show()     
+
+
+    def _group_audio_axis(self):
+        ax = plt.gca()
+        # Plot formatting
+        ax.set_ylim((-10,120))
+        ax.invert_yaxis()
+        yticks = range(-10,130,10)
+        ax.set_yticks(ticks=yticks)
+        ax.set_ylabel("Hearing Threshold (dB HL)")
+        ax.semilogx()
+        ax.set_xlim((200,9500))
+        ax.set_xticks(ticks=[250,500,1000,2000,4000,8000], labels=['250','500','1000','2000','4000','8000'])
+        ax.tick_params(axis='x', which='minor', bottom=False)
+        ax.set_xlabel("Frequency (Hz)")
+        ax.axhline(y=25, color="black", linestyle='--', linewidth=1)
+        ax.grid()
+        #ax.set_title(f"Study Audiograms (n={n})")
+        return ax
 
 
     ###############################

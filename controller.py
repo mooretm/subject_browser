@@ -108,11 +108,13 @@ class Application(tk.Tk):
         self.notebook.grid(row=5, column=5, padx=10, pady=10)
 
         # Load filter view
-        self.filter_view = filterview.FilterView(self.notebook, self.db, self.filter_dict)
+        self.filter_view = filterview.FilterView(self.notebook, self.db, 
+            self.filter_dict)
         self.filter_view.grid(row=5, column=5)
 
         # Load browser view
-        self.browser_view = browserview.BrowserView(self.notebook, self.db, self.dbmodel)
+        self.browser_view = browserview.BrowserView(self.notebook, self.db, 
+            self.dbmodel)
         self.browser_view.grid(row=5, column=5)
 
         # Add tabs to notebook
@@ -144,8 +146,9 @@ class Application(tk.Tk):
             '<<FileQuit>>': lambda _: self._quit(),
 
             # Tools menu
-            '<<ToolsReset>>': lambda _: self._reset_filters(),
-            '<<ToolsPlotGroupAudio>>': lambda _: self._plot_group_audio(),
+            '<<ToolsReset>>': lambda _: self.filter_view.clear_filters(),
+            '<<ToolsPlotGroupAudio>>': lambda _: self.db.plot_group_audio(),
+            '<<ToolsPlotEarSpecificGroupAudio>>': lambda _: self.db.plot_ear_specific_group_audio(),
 
             # Help menu
             '<<Help>>': lambda _: self._show_help(),
@@ -360,6 +363,32 @@ class Application(tk.Tk):
         self.browser_view.load_tree()
 
 
+    # def _initial_scrub(self):
+    #     """ Perform perfunctory junk record removal
+    #     """
+    #     # Clear any previous output from textbox
+    #     self.filter_view.txt_output.delete('1.0', tk.END)
+    #     # Provide feedback
+    #     self.filter_view.txt_output.insert(tk.END, 
+    #             f"controller: Loaded database records" +
+    #             f"controller: Remaining Candidates: {str(self.db.data.shape[0])}")
+
+    #     # Scroll to bottom of text box
+    #     self.filter_view.txt_output.yview(tk.END)
+
+    #     # Create dictionary of filtering values
+    #     scrub_dict = {
+    #         1: ("Status", "equals", "Active"),
+    #         2: ("Good Candidate", "does not equal", "Poor"),
+    #         3: ("Employment Status", "does not equal", "Employee"),
+    #         4: ("Miles From Starkey", "<=", "60")
+    #     }
+    #     # Call filtering function
+    #     self._filter(scrub_dict)
+    #     # Update tree widget after filtering
+    #     self.browser_view.load_tree()
+
+    
     #########################
     # Browse View Functions #
     #########################
@@ -406,22 +435,6 @@ class Application(tk.Tk):
         for key, variable in self.sessionpars.items():
             self.sessionpars_model.set(key, variable.get())
             self.sessionpars_model.save()
-
-
-    ########################
-    # Tools Menu Functions #
-    ########################
-    def _reset_filters(self):
-        """ Clear values from filter dictionary.
-        """
-        self.filter_view._clear_filters()
-
-
-    def _plot_group_audio(self):
-        """ Plot all individual audiograms on single plot. 
-            Include group mean audiogram.
-        """
-        print("\ncontroller: Group audio plotting code goes here")
 
 
     #######################
