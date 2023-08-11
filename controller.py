@@ -36,7 +36,6 @@ from models import dbmodel
 from models import filtermodel
 from models.constants import FieldTypes as FT
 # View imports
-from views import mainview
 from views import sessionview
 from views import filterview
 from views import browserview
@@ -302,9 +301,9 @@ class Application(tk.Tk):
         """ Read external filter values list and update filterview
             comboboxes with values
         """
-        # Get updated filter values dict
+        # Get imported filter values as dict
         self.filter_dict = self.filtermodel.import_filter_dict()
-        self._filter(self.filter_dict)
+        self._on_filter()
 
 
     def _export_filter_vals(self):
