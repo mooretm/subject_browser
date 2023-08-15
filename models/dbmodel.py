@@ -157,26 +157,6 @@ class SubDB:
         print(f"dbmodel: Remaining candidates: {self.data.shape[0]}")
 
 
-    # def _initial_scrub(self):
-    #     """ Perform perfunctory filtering 
-    #     """
-    #     # Remove internal employees
-    #     self.data = self.data[self.data["Employment Status"] != "Employee"]
-    #     print(f"Automatically removed internal Starkey employees")
-    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
-
-    #     # Remove inactive records
-    #     self.data = self.data[self.data["Status"] == "Active"]
-    #     print(f"Automatically removed inactive participants")
-    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
-
-    #     # Remove poor candidates
-    #     self.data = self.data[self.data["Good Candidate"].isin(["-", 
-    #         "Excellent", "Good", "Fair"])]
-    #     print(f"Automatically removed poor candidates")
-    #     print(f"Remaining candidates: {self.data.shape[0]}\n")
-
-
     def write(self):
         """ Save database to .csv"""
         # Generate date stamp

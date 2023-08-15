@@ -33,7 +33,6 @@ from models import sessionmodel
 from models import versionmodel
 from models import csvmodel
 from models import dbmodel
-from models import filtermodel
 from models.constants import FieldTypes as FT
 # View imports
 from views import sessionview
@@ -143,7 +142,7 @@ class Application(tk.Tk):
             '<<FileQuit>>': lambda _: self._quit(),
 
             # Tools menu
-            '<<ToolsReset>>': lambda _: self._clear_filters(), #self.filter_view.clear_filters(),
+            '<<ToolsReset>>': lambda _: self.filter_view.clear_filters(),
             '<<ToolsPlotGroupAudio>>': lambda _: self.db.plot_group_audio(),
             '<<ToolsPlotEarSpecificGroupAudio>>': lambda _: self.db.plot_ear_specific_group_audio(),
 
@@ -336,7 +335,8 @@ class Application(tk.Tk):
             Returns: new filter dictionary with updated data types.
         """
         for key in filter_dict:
-            if filter_dict[key][1] == 'contains':
+            if (filter_dict[key][1] == 'contains') or \
+                (filter_dict[key][1] == 'not in'):
                 try:
                     # Split string of filter values into list
                     vals = filter_dict[key][2].split()
@@ -430,9 +430,6 @@ class Application(tk.Tk):
     ########################
     # Tools Menu Functions #
     ########################
-    def _clear_filters(self):
-        self.filter_view.clear_filters()
-        self.filter_dict = {}
 
 
     ############################
@@ -471,6 +468,7 @@ class Application(tk.Tk):
             self.sessionpars_model.set(key, variable.get())
             self.sessionpars_model.save()
         print("\ncontroller: Saved variables to config file")
+
 
     #######################
     # Help Menu Functions #
