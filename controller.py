@@ -55,7 +55,7 @@ class Application(tk.Tk):
         #############
         self.NAME = 'Subject Browser'
         self.VERSION = '1.0.0'
-        self.EDITED = 'August 11, 2023'
+        self.EDITED = 'August 15, 2023'
 
         # Create menu settings dictionary
         self._app_info = {
@@ -94,11 +94,15 @@ class Application(tk.Tk):
         # user closes window via "X"
         self.protocol('WM_DELETE_WINDOW', self._quit)
 
-        # Create filter settings dict
-        self.filter_dict = {}
+        # Load current session parameters from file
+        # or load defaults if file does not exist yet
+        # Check for version updates and destroy if mandatory
+        self.sessionpars_model = sessionmodel.SessionParsModel(self._app_info)
+        self._load_sessionpars()
+        self.sessionpars_model.save()
 
         # Create filter model
-        self.filtermodel = filtermodel.FilterList()
+        #self.filtermodel = filtermodel.FilterList()
 
         # Create sample database model
         self._create_sample_db()
@@ -108,8 +112,7 @@ class Application(tk.Tk):
         self.notebook.grid(row=5, column=5, padx=10, pady=10)
 
         # Load filter view
-        self.filter_view = filterview.FilterView(self.notebook, self.db, 
-            self.filter_dict)
+        self.filter_view = filterview.FilterView(self.notebook, self.db, self.sessionpars)
         self.filter_view.grid(row=5, column=5)
 
         # Load browser view
@@ -120,12 +123,6 @@ class Application(tk.Tk):
         # Add tabs to notebook
         self.notebook.add(self.filter_view, text='Filter')
         self.notebook.add(self.browser_view, text='Browse')
-
-        # Load current session parameters from file
-        # or load defaults if file does not exist yet
-        # Check for version updates and destroy if mandatory
-        self.sessionpars_model = sessionmodel.SessionParsModel(self._app_info)
-        self._load_sessionpars()
 
         # Load CSV writer model
         self.csvmodel = csvmodel.CSVModel(self.sessionpars)
@@ -140,13 +137,13 @@ class Application(tk.Tk):
             #'<<FileSession>>': lambda _: self._show_session_dialog(),
             '<<FileImportFullDB>>': lambda _: self._import_full(),
             '<<FileImportFilteredDB>>': lambda _: self._import_filtered(),
-            '<<FileExportDB>>': lambda _: self._export_db(),
-            '<<FileImportFilterVals>>': lambda _: self._import_filter_vals(),
+            '<<FileExportDB>>': lambda _: self.db.write(), #self._export_db(),
+            '<<FileImportFilterVals>>': lambda _: self._import_csv_filter_vals(),
             '<<FileExportFilterVals>>': lambda _: self._export_filter_vals(),
             '<<FileQuit>>': lambda _: self._quit(),
 
             # Tools menu
-            '<<ToolsReset>>': lambda _: self.filter_view.clear_filters(),
+            '<<ToolsReset>>': lambda _: self._clear_filters(), #self.filter_view.clear_filters(),
             '<<ToolsPlotGroupAudio>>': lambda _: self.db.plot_group_audio(),
             '<<ToolsPlotEarSpecificGroupAudio>>': lambda _: self.db.plot_ear_specific_group_audio(),
 
@@ -157,7 +154,8 @@ class Application(tk.Tk):
             '<<SessionSubmit>>': lambda _: self._save_sessionpars(),
 
             # Filter view
-            '<<FilterviewFilter>>': lambda _: self._on_filter(),
+            '<<FilterviewFilter>>': lambda _: self._get_filterview_vals(),
+            '<<FilterviewScrubToggled>>': lambda _: self._save_sessionpars(), #self.save_pars(), #self.sessionpars_model.save()
         }
 
         # Bind callbacks to sequences
@@ -242,6 +240,11 @@ class Application(tk.Tk):
         }
 
 
+    def save_pars(self):
+        self.sessionpars_model.set()
+        self.sessionpars_model.save()
+
+
     ###################
     # File Menu Funcs #
     ###################
@@ -259,7 +262,7 @@ class Application(tk.Tk):
         self.db.load_db(filename)
 
         # Get 'initial scrub' checkbox state
-        if self.filter_view.scrub_var.get() == 1:
+        if self.sessionpars['initial_scrub'].get() == 1:
             self._initial_scrub()
         else:
             # Clear any previous output from textbox
@@ -294,25 +297,21 @@ class Application(tk.Tk):
         self.browser_view.load_tree()
 
 
-    def _export_db(self):
-        """ Write current database object to .csv file
-        """
-        self.db.write()
-
-
-    def _import_filter_vals(self):
+    def _import_csv_filter_vals(self):
         """ Read external filter values list and update filterview
             comboboxes with values
         """
         # Get imported filter values as dict
-        self.filter_dict = self.filtermodel.import_filter_dict()
-        self._on_filter()
+        #filter_dict = self.filtermodel.import_filter_dict()
+        filter_dict = self.csvmodel.import_filter_dict()
+        self.on_filter(filter_dict)
 
 
     def _export_filter_vals(self):
         """ Write filterview combobox values to .csv file
         """
-        self.filtermodel.export_filters(self.filter_view.filter_dict)
+        filter_dict = self.filter_view._make_filter_dict()
+        self.csvmodel.export_filters(filter_dict)
 
 
     def _quit(self):
@@ -324,7 +323,45 @@ class Application(tk.Tk):
     ##########################
     # Filter View Functions #
     ##########################
-    def _on_filter(self):
+    def _get_filterview_vals(self):
+        # Get current filter values
+        filter_dict = self.filter_view._make_filter_dict()
+        filter_dict = self._format_filter_vals(filter_dict)
+        self.on_filter(filter_dict)
+
+
+    def _format_filter_vals(self, filter_dict):
+        """ Convert filter values to float, where possible.
+
+            Returns: new filter dictionary with updated data types.
+        """
+        for key in filter_dict:
+            if filter_dict[key][1] == 'contains':
+                try:
+                    # Split string of filter values into list
+                    vals = filter_dict[key][2].split()
+                    # Iterate through list converting to float
+                    filter_dict[key][2] = [float(x) for x in vals]
+                except ValueError:
+                    # Cannot convert string to float
+                    filter_dict[key][2] = vals
+            else:
+                try:
+                    filter_dict[key][2] = float(filter_dict[key][2])
+                except ValueError:
+                    # Cannot convert string to float
+                    pass
+
+        # print(f"\ncontroller: key = {key} \
+        #         \nsearch term = {filter_dict[key][0]} \
+        #         \noperater = {filter_dict[key][1]} \
+        #         \nvalue = {filter_dict[key][2]}, type = {type(filter_dict[key][2])} \
+        # ")
+
+        return filter_dict                
+
+
+    def on_filter(self, filter_dict):
         """ Called from filterview 'Filter Records' button event. 
             Call filter method of dbmodel.
             Update tree widget after filtering. 
@@ -336,17 +373,19 @@ class Application(tk.Tk):
         self.filter_view.txt_output.insert(tk.END,
             f"Candidates before filtering: {str(self.db.data.shape[0])}\n\n")
 
+        print(f"\ncontroller: Filter dict: {filter_dict.items()}")
+
         # Extract filter dict values and pass to db filter function
         try:
-            for val in self.filter_dict:
+            for val in filter_dict:
                 self.db.filter(
-                    self.filter_dict[val][0],
-                    self.filter_dict[val][1],
-                    self.filter_dict[val][2]
+                    filter_dict[val][0],
+                    filter_dict[val][1],
+                    filter_dict[val][2]
                 )
                 self.filter_view.txt_output.insert(tk.END, 
-                    f"Filtering by: {self.filter_dict[val][0]} " +
-                    f"{self.filter_dict[val][1]} {self.filter_dict[val][2]}...\n" +
+                    f"Filtering by: {filter_dict[val][0]} " +
+                    f"{filter_dict[val][1]} {filter_dict[val][2]}...\n" +
                     f"Remaining Candidates: {str(self.db.data.shape[0])}\n\n")
                 # Scroll to bottom of text box
                 self.filter_view.txt_output.yview(tk.END)
@@ -363,32 +402,21 @@ class Application(tk.Tk):
         self.browser_view.load_tree()
 
 
-    # def _initial_scrub(self):
-    #     """ Perform perfunctory junk record removal
-    #     """
-    #     # Clear any previous output from textbox
-    #     self.filter_view.txt_output.delete('1.0', tk.END)
-    #     # Provide feedback
-    #     self.filter_view.txt_output.insert(tk.END, 
-    #             f"controller: Loaded database records" +
-    #             f"controller: Remaining Candidates: {str(self.db.data.shape[0])}")
+    def _initial_scrub(self):
+        """ Perform perfunctory junk record removal
+        """
+        # Create dictionary of filtering values
+        filter_dict = {
+            1: ("Status", "equals", "Active"),
+            2: ("Good Candidate", "does not equal", "Poor"),
+            3: ("Employment Status", "does not equal", "Employee"),
+            #4: ("Miles From Starkey", "<=", 60)
+        }
 
-    #     # Scroll to bottom of text box
-    #     self.filter_view.txt_output.yview(tk.END)
+        # Call filter function
+        self.on_filter(filter_dict)
 
-    #     # Create dictionary of filtering values
-    #     scrub_dict = {
-    #         1: ("Status", "equals", "Active"),
-    #         2: ("Good Candidate", "does not equal", "Poor"),
-    #         3: ("Employment Status", "does not equal", "Employee"),
-    #         4: ("Miles From Starkey", "<=", "60")
-    #     }
-    #     # Call filtering function
-    #     self._filter(scrub_dict)
-    #     # Update tree widget after filtering
-    #     self.browser_view.load_tree()
 
-    
     #########################
     # Browse View Functions #
     #########################
@@ -397,6 +425,14 @@ class Application(tk.Tk):
         """
         ax1 = self.browser_view.plot_audio()
         self.db.audio_ac(record, ax1)
+
+
+    ########################
+    # Tools Menu Functions #
+    ########################
+    def _clear_filters(self):
+        self.filter_view.clear_filters()
+        self.filter_dict = {}
 
 
     ############################
@@ -431,11 +467,10 @@ class Application(tk.Tk):
     def _save_sessionpars(self, *_):
         """ Save current runtime parameters to file 
         """
-        print("\ncontroller: Calling sessionpars model set and save funcs")
         for key, variable in self.sessionpars.items():
             self.sessionpars_model.set(key, variable.get())
             self.sessionpars_model.save()
-
+        print("\ncontroller: Saved variables to config file")
 
     #######################
     # Help Menu Functions #

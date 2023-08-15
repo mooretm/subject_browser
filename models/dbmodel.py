@@ -208,11 +208,6 @@ class SubDB:
     # Filtering Functions #
     #######################
     def filter(self, colname, operator, value):
-        # Drop "NaNs" and other non-data from column
-        #df = self.data.copy()
-        #df[colname].dropna()
-        #df = df[~df[colname].isin(['-', '%null%', np.NaN])]
-
         # Filter
         if operator == "equals":
             self.data = self.data[self.data[colname] == value]
@@ -228,7 +223,9 @@ class SubDB:
             self.data = self.data[self.data[colname] <= value]
         if operator == "contains":
             self.data = self.data[self.data[colname].isin(value)]
-        print(f"\ndbmodel: Filtered column '{colname}' for '{value}'")
+        if operator == "not in":
+            self.data = self.data[~self.data[colname].isin(value)]
+        print(f"\ndbmodel: Filtered column '{colname}' for {value}")
         print(f"dbmodel: Remaining candidates: {self.data.shape[0]}")
 
 
@@ -268,13 +265,10 @@ class SubDB:
         for side in sides:
             for freq in freqs:
                 colname = side + " " + str(freq)
-                #ac.append(self.data[self.data['Subject Id'] == sub_id][colname].astype(int))
                 try:
                     ac[side + ' ' + str(freq)] = int(
                         self.data[self.data['Subject Id'] == sub_id][colname].values[0]
                     )
-                    #if ac[side + ' ' + str(freq)] > 120:
-                    #    ac[side + ' ' + str(freq)] = None
                 except:
                     ac[side + ' ' + str(freq)] = None
 
@@ -424,13 +418,6 @@ class SubDB:
         ax = self._group_audio_axis()
         thresholds, right, left = self._get_audio_thresholds()
         ax.set_title(f"Audiograms (n={int(thresholds.shape[0]/2)})")
-
-        # # Plot individual thresholds
-        # for ii in range(0, len(thresholds)):
-        #     # Create mask to account for NaNs
-        #     vals = thresholds.iloc[ii,:]
-        #     mask = np.isfinite(vals)
-        #     ax.plot(vals[mask].index, vals[mask], color='dimgrey')
 
         # Plot individual thresholds
         for row in range(0, left.shape[0]):

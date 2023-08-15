@@ -20,23 +20,25 @@ class FilterView(ttk.Frame):
     """ Filter view for 'Filter' tab of notebook
     """
 
-    def __init__(self, parent, database, filter_dict, *args, **kwargs):
+    def __init__(self, parent, database, sessionpars, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
         ##############
         # Initialize #
         ##############
         # Assign constructor arguments to class variables
-        self.filter_dict = filter_dict
         self.db = database
+        self.sessionpars = sessionpars
+
+        self.sessionpars['initial_scrub'].trace_add('write', self._save_scrub_state)
 
         # Create list of database columns
         self.attributes = list(self.db.data.columns)
         self.attributes.sort()
 
         # Create list of operators
-        self.operators = ["equals", "does not equal", "contains", ">", ">=", 
-            "<", "<="]
+        self.operators = ["equals", "does not equal", "contains", "not in", 
+                          ">", ">=", "<", "<="]
 
         self._draw_widgets()
 
@@ -86,9 +88,8 @@ class FilterView(ttk.Frame):
         # Controls #
         ############
         # Initial scrub checkbutton
-        self.scrub_var = tk.IntVar(value=0)
         ttk.Checkbutton(frm_options, text="Initial Scrub",
-            takefocus=0, variable=self.scrub_var).grid(
+            takefocus=0, variable=self.sessionpars['initial_scrub']).grid(
                 row=0, column=0, sticky='w', padx=5, pady=5)
 
         # Filter box labels
@@ -183,6 +184,13 @@ class FilterView(ttk.Frame):
     #####################
     # General Functions #
     #####################
+    def _save_scrub_state(self, var, index, mode):
+        """ Send event to controller that initial scrub 
+            checkbox was toggled.
+        """
+        self.event_generate('<<FilterviewScrubToggled>>')
+
+
     def clear_output(self):
         self.txt_output.delete('1.0', tk.END)
 
@@ -192,7 +200,7 @@ class FilterView(ttk.Frame):
             Reset filter dict to empty.
         """
         # Clear out current filter dict
-        self.filter_dict = {}
+        #self.filter_dict = {}
 
         # Delete any output from textbox
         self.clear_output()
@@ -264,10 +272,7 @@ class FilterView(ttk.Frame):
         """ Update filter dict based on provided combobox values.
             Send filter event to controller.
         """
-        # Get values from all comboboxes
-        self._make_filter_dict()
-
-        # Send event to controller to filter
+        # Send event to controller
         self.event_generate('<<FilterviewFilter>>')
 
 
@@ -276,6 +281,7 @@ class FilterView(ttk.Frame):
             Check for missing values and skipped rows.
         """
         all_data = []
+        filter_dict = {}
         self.clear_output()
 
         for ii in range(0, len(self.attrib_cbs)):
@@ -299,37 +305,17 @@ class FilterView(ttk.Frame):
                     )
                     return
             else:
-                # Create list from values if 'contains' operator
-                # Create new 'value' variable because tk.StringVar
-                # cannot hold a list
-                if self.op_vars[ii].get() == "contains":
-                    value = self.value_vars[ii].get().split()
-                    # Convert each list element to float, if possible
-                    try:
-                        value = [float(x) for x in value]
-                    except ValueError:
-                        # Cannot convert string to float
-                        pass
-                else:
-                    value = self.value_vars[ii].get()
-                    # Convert value to float, if possible
-                    try:
-                        value = float(value)
-                    except ValueError:
-                        # Cannot convert string to float
-                        pass
-
                 # If all values are present in a given row, append to list
                 all_data.append(
-                    (
+                    [
                     self.attrib_vars[ii].get(), 
                     self.op_vars[ii].get(), 
-                    value
-                    )
+                    self.value_vars[ii].get()
+                    ]
                 )
                 try:
                     # Update dictionary with list by index
-                    self.filter_dict[ii] = all_data[ii]
+                    filter_dict[ii] = all_data[ii]
                 except IndexError:
                     # If indexes do not match, there was an empty row 
                     # between rows with values: display message and 
@@ -340,3 +326,77 @@ class FilterView(ttk.Frame):
                             "with values."
                     )
                     return
+        return filter_dict
+
+    # def _make_filter_dict(self):
+    #     """ Create a dictionary of filter values from combobox values. 
+    #         Check for missing values and skipped rows.
+    #     """
+    #     all_data = []
+    #     self.clear_output()
+
+    #     for ii in range(0, len(self.attrib_cbs)):
+    #         # Check for any empty values in a given row
+    #         if (not self.attrib_vars[ii].get()) \
+    #             or (not self.op_vars[ii].get()) \
+    #             or (not self.value_vars[ii].get()):
+    #             # Check whether entire row is empty
+    #             if (not self.attrib_vars[ii].get()) \
+    #                 and (not self.op_vars[ii].get()) \
+    #                 and (not self.value_vars[ii].get()):
+    #                 pass # do nothing if entire row is empty
+    #             else:
+    #                 # If some values in a row are missing, 
+    #                 # display message and exit
+    #                 print("Missing values!")
+    #                 messagebox.showerror(title="Missing Values",
+    #                     message="There are missing values!",
+    #                     detail="Please provide all filter parameters " +
+    #                         "for a given row."
+    #                 )
+    #                 return
+    #         else:
+    #             # Create list from values if 'contains' operator
+    #             # Create new 'value' variable because tk.StringVar
+    #             # cannot hold a list
+    #             if self.op_vars[ii].get() == "contains":
+    #                 value = self.value_vars[ii].get().split()
+    #                 print(value)
+    #                 # Convert each list element to float, if possible
+    #                 try:
+    #                     value = [float(x) for x in value]
+    #                     print(value)
+    #                 except ValueError:
+    #                     # Cannot convert string to float
+    #                     pass
+    #             else:
+    #                 value = self.value_vars[ii].get()
+    #                 # Convert value to float, if possible
+    #                 try:
+    #                     value = float(value)
+    #                 except ValueError:
+    #                     # Cannot convert string to float
+    #                     pass
+
+    #             # If all values are present in a given row, append to list
+    #             all_data.append(
+    #                 (
+    #                 self.attrib_vars[ii].get(), 
+    #                 self.op_vars[ii].get(), 
+    #                 value
+    #                 )
+    #             )
+    #             try:
+    #                 # Update dictionary with list by index
+    #                 #self.filter_dict[ii].set(all_data[ii])
+    #                 self.filter_dict[ii] = all_data[ii]
+    #             except IndexError:
+    #                 # If indexes do not match, there was an empty row 
+    #                 # between rows with values: display message and 
+    #                 # exit
+    #                 messagebox.showerror(title="Empty Rows",
+    #                     message="One or more rows has been skipped!",
+    #                     detail="There cannot be empty rows between rows " +
+    #                         "with values."
+    #                 )
+    #                 return
