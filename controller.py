@@ -54,7 +54,7 @@ class Application(tk.Tk):
         #############
         self.NAME = 'Subject Browser'
         self.VERSION = '1.0.0'
-        self.EDITED = 'August 15, 2023'
+        self.EDITED = 'August 16, 2023'
 
         # Create menu settings dictionary
         self._app_info = {
@@ -154,7 +154,10 @@ class Application(tk.Tk):
 
             # Filter view
             '<<FilterviewFilter>>': lambda _: self._get_filterview_vals(),
-            '<<FilterviewScrubToggled>>': lambda _: self._save_sessionpars(), #self.save_pars(), #self.sessionpars_model.save()
+            '<<FilterviewScrubToggled>>': lambda _: self._save_sessionpars(),
+
+            # Browser view
+            '<<BrowserviewItemSelected>>': lambda _: self._tree_item_selected(),
         }
 
         # Bind callbacks to sequences
@@ -418,13 +421,21 @@ class Application(tk.Tk):
 
 
     #########################
-    # Browse View Functions #
+    # Browser View Functions #
     #########################
-    def _show_audio(self, record):
-        """ Retrieve figure axis handle and plot audio 
+    def _tree_item_selected(self):
+        """ Get subject audiogram data and plot.
         """
-        ax1 = self.browser_view.plot_audio()
-        self.db.audio_ac(record, ax1)
+        # Get air and bone thresholds for specified subject
+        try:
+            subject = self.browser_view.record
+            ac, bc = self.db.get_thresholds(subject)
+        except AttributeError:
+            print("\ncontroller: No participant selected")
+            return
+
+        # Plot audiogram
+        self.browser_view.plot_audiogram(ac=ac, bc=bc)
 
 
     ########################

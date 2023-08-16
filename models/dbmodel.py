@@ -4,7 +4,6 @@
     from the online subject database. 
 
     Author: Travis M. Moore
-    Last edited: Aug 08, 2023
  """
 
 ###########
@@ -268,79 +267,79 @@ class SubDB:
         return ac, bc
 
 
-    def audio_ac(self, sub_id, ax=None):
-        if ax is None:
-            ax = plt.gca()
+    # def audio_ac(self, sub_id, ax=None):
+    #     if ax is None:
+    #         ax = plt.gca()
 
-        # Get AC and BC thresholds
-        ac, bc = self.get_thresholds(sub_id)
-        thresholds = (ac, bc)
+    #     # Get AC and BC thresholds
+    #     ac, bc = self.get_thresholds(sub_id)
+    #     thresholds = (ac, bc)
 
-        # Remove "None" values from thresholds
-        for ii in range(0,2):
-            for key, value in dict(thresholds[ii]).items():
-                if value is None:
-                    del thresholds[ii][key]
+    #     # Remove "None" values from thresholds
+    #     for ii in range(0,2):
+    #         for key, value in dict(thresholds[ii]).items():
+    #             if value is None:
+    #                 del thresholds[ii][key]
 
-        # Plot AC thresholds
-        x = list(ac.items())
-        right_ac_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
-        right_ac_thresh = [j[1] for j in x if 'Right' in j[0]]
-        left_ac_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
-        left_ac_thresh = [j[1] for j in x if 'Left' in j[0]]
-        ax.plot(right_ac_freqs, right_ac_thresh, 'ro-')
-        ax.plot(left_ac_freqs, left_ac_thresh, 'bx-')
+    #     # Plot AC thresholds
+    #     x = list(ac.items())
+    #     right_ac_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
+    #     right_ac_thresh = [j[1] for j in x if 'Right' in j[0]]
+    #     left_ac_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
+    #     left_ac_thresh = [j[1] for j in x if 'Left' in j[0]]
+    #     ax.plot(right_ac_freqs, right_ac_thresh, 'ro-')
+    #     ax.plot(left_ac_freqs, left_ac_thresh, 'bx-')
 
-        # Plot BC thresholds
-        x = list(bc.items())
-        right_bc_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
-        right_bc_thresh = [j[1] for j in x if 'Right' in j[0]]
-        left_bc_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
-        left_bc_thresh = [j[1] for j in x if 'Left' in j[0]]
-        ax.plot(right_bc_freqs, right_bc_thresh, marker=8, c='red', linestyle='None')
-        ax.plot(left_bc_freqs, left_bc_thresh, marker=9, c='blue', linestyle='None')
+    #     # Plot BC thresholds
+    #     x = list(bc.items())
+    #     right_bc_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
+    #     right_bc_thresh = [j[1] for j in x if 'Right' in j[0]]
+    #     left_bc_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
+    #     left_bc_thresh = [j[1] for j in x if 'Left' in j[0]]
+    #     ax.plot(right_bc_freqs, right_bc_thresh, marker=8, c='red', linestyle='None')
+    #     ax.plot(left_bc_freqs, left_bc_thresh, marker=9, c='blue', linestyle='None')
 
-        # Plot formatting
-        ax.set_ylim((-10,120))
-        ax.invert_yaxis()
-        yticks = range(-10,130,10)
-        ax.set_yticks(ticks=yticks)
-        ax.set_ylabel("Hearing Threshold (dB HL)")
-        ax.semilogx()
-        ax.set_xlim((200,9500))
-        ax.set_xticks(ticks=[250,500,1000,2000,4000,8000], labels=[
-            '250','500','1000','2000','4000','8000'])
-        ax.set_xlabel("Frequency (Hz)")
-        ax.axhline(y=25, color="black", linestyle='--', linewidth=1)
-        ax.grid()
-        ax.set_title(f"Audiogram for Participant {sub_id}")
+    #     # Plot formatting
+    #     ax.set_ylim((-10,120))
+    #     ax.invert_yaxis()
+    #     yticks = range(-10,130,10)
+    #     ax.set_yticks(ticks=yticks)
+    #     ax.set_ylabel("Hearing Threshold (dB HL)")
+    #     ax.semilogx()
+    #     ax.set_xlim((200,9500))
+    #     ax.set_xticks(ticks=[250,500,1000,2000,4000,8000], labels=[
+    #         '250','500','1000','2000','4000','8000'])
+    #     ax.set_xlabel("Frequency (Hz)")
+    #     ax.axhline(y=25, color="black", linestyle='--', linewidth=1)
+    #     ax.grid()
+    #     ax.set_title(f"Audiogram for Participant {sub_id}")
 
-        # Plot color regions
-        audio_colors = ["gray", "green", "gold", "orange", "mediumpurple", 
-            "lightsalmon"]
-        alpha_val = 0.25
-        degree_dict={
-            'normal': (-10, 25),
-            'mild': (25, 40),
-            'moderate': (40, 55),
-            'moderately-severe': (55, 70),
-            'severe': (70, 90),
-            'profound': (90, 120)
-        }
-        for idx, key in enumerate(degree_dict):
-            coords = [
-                [0,degree_dict[key][0]], 
-                [9500,degree_dict[key][0]], 
-                [9500,degree_dict[key][1]], 
-                [0,degree_dict[key][1]]
-            ]
-            # Repeat the first point to create a 'closed loop'
-            coords.append(coords[0])
-            # Create lists of x and y values 
-            xs, ys = zip(*coords) 
-            # Fill polygon
-            ax.fill(xs,ys, edgecolor='none', 
-                facecolor=audio_colors[idx], alpha=alpha_val)
+    #     # Plot color regions
+    #     audio_colors = ["gray", "green", "gold", "orange", "mediumpurple", 
+    #         "lightsalmon"]
+    #     alpha_val = 0.25
+    #     degree_dict={
+    #         'normal': (-10, 25),
+    #         'mild': (25, 40),
+    #         'moderate': (40, 55),
+    #         'moderately-severe': (55, 70),
+    #         'severe': (70, 90),
+    #         'profound': (90, 120)
+    #     }
+    #     for idx, key in enumerate(degree_dict):
+    #         coords = [
+    #             [0,degree_dict[key][0]], 
+    #             [9500,degree_dict[key][0]], 
+    #             [9500,degree_dict[key][1]], 
+    #             [0,degree_dict[key][1]]
+    #         ]
+    #         # Repeat the first point to create a 'closed loop'
+    #         coords.append(coords[0])
+    #         # Create lists of x and y values 
+    #         xs, ys = zip(*coords) 
+    #         # Fill polygon
+    #         ax.fill(xs,ys, edgecolor='none', 
+    #             facecolor=audio_colors[idx], alpha=alpha_val)
 
 
     #########################

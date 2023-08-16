@@ -10,6 +10,7 @@ from tkinter import ttk
 
 # Import plotting packages
 import matplotlib
+import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -51,6 +52,10 @@ class BrowserView(ttk.Frame):
             for key, spec in fields.items()
         }
 
+        # Blank audiogram thresholds
+        #ac = {'RightAC 250': 999}
+
+
         # Change weights so widgets "float" in the center
         # of the frame
         for ii in [0, 1, 5, 10, 15]:
@@ -87,6 +92,10 @@ class BrowserView(ttk.Frame):
         # Right device info
         lfrm_right = ttk.LabelFrame(self.frm_main, text="Right Side")
         lfrm_right.grid(row=15, column=10, **label_options, sticky='nsew')
+
+        # Fitting range overlay buttons
+        frm_overlay = ttk.Frame(self.frm_main)
+        frm_overlay.grid(row=3, column=15)
 
 
         ################
@@ -209,9 +218,6 @@ class BrowserView(ttk.Frame):
         ttk.Label(lfrm_right, textvariable=self._vars['r_matrix'], 
             style='rec.TLabel').grid(row=5, column=1, sticky='w')
 
-        # Call audio plot
-        self.plot_audio()
-
 
         ####################
         # Subject Treeview #
@@ -242,6 +248,33 @@ class BrowserView(ttk.Frame):
         self.scrollbar.grid(row=5, rowspan=20, column=1, sticky='ns')
 
 
+        #########################
+        # Fitting Range Buttons #
+        #########################
+        self.overlay = tk.StringVar()
+        ttk.Label(frm_overlay, text="Overlay Fitting Range:").grid(
+            row=5, column=5)
+        ttk.Radiobutton(frm_overlay, text='L', takefocus=0, value='L', 
+            variable=self.overlay, command=self._on_radio_select).grid(
+            row=5, column=10, padx=(10,0))
+        ttk.Radiobutton(frm_overlay, text='M', takefocus=0, value='M', 
+            variable=self.overlay, command=self._on_radio_select).grid(
+            row=5, column=15, padx=10)
+        ttk.Radiobutton(frm_overlay, text='P', takefocus=0, value='P', 
+            variable=self.overlay, command=self._on_radio_select).grid(
+            row=5, column=20)
+
+
+        ##################
+        # Audiogram Plot #
+        ##################
+        # Show empty plot
+        self.plot_audiogram({'RightAC 500': 999}, {'RightBC 500': 999})
+
+
+    #############
+    # Functions #
+    #############
     def load_tree(self):
         """ Delete existing records, then populate with new
             records.
@@ -256,10 +289,31 @@ class BrowserView(ttk.Frame):
             self.tree.insert('', tk.END, values=subject)
 
 
-    #############
-    # Functions #
-    #############
-    def plot_audio(self):
+    def _item_selected(self, *args):
+        """ Trigger event that tree item was selected.
+        """
+        self.overlay.set(None)
+
+        for selected_item in self.tree.selection():
+            item = self.tree.item(selected_item)
+            self.record = int(item['values'][0])
+
+            # Update label textvariables with record data
+            self.db.update_label_vars(self._vars, self.record)
+
+        self.event_generate('<<BrowserviewItemSelected>>')
+
+
+    def _on_radio_select(self):
+        """ Add fitting range overlay for the specified
+            receiver gain.
+        """
+        self.event_generate('<<BrowserviewItemSelected>>')
+
+    ######################
+    # Plotting Functions #
+    ######################
+    def _create_canvas(self):
         """ Create figure axis for audiogram plot
         """
         figure = Figure(figsize=(5, 4), dpi=100)
@@ -271,21 +325,104 @@ class BrowserView(ttk.Frame):
         return ax1
 
 
-    def _item_selected(self, *args):
-        """ Trigger event that tree item was selected """
-        for selected_item in self.tree.selection():
-            item = self.tree.item(selected_item)
-            record = int(item['values'][0])
+    def plot_audiogram(self, ac, bc, ax=None):
+        if ax is None:
+            #ax = plt.gca()
+            ax = self._create_canvas()
 
-            # Update label textvariables with record data
-            self.db.update_label_vars(self._vars, record)
+        overlay_flag = 0
 
-            # Call audio display function
-            self._show_audio(record)
+        thresholds = (ac, bc)
+
+        # Remove "None" values from thresholds
+        for ii in range(0,2):
+            for key, value in dict(thresholds[ii]).items():
+                if value is None:
+                    del thresholds[ii][key]
+
+        # Plot AC thresholds
+        x = list(ac.items())
+        right_ac_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
+        right_ac_thresh = [j[1] for j in x if 'Right' in j[0]]
+        left_ac_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
+        left_ac_thresh = [j[1] for j in x if 'Left' in j[0]]
+        ax.plot(right_ac_freqs, right_ac_thresh, 'ro-')
+        ax.plot(left_ac_freqs, left_ac_thresh, 'bx-')
+
+        # Plot BC thresholds
+        x = list(bc.items())
+        right_bc_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
+        right_bc_thresh = [j[1] for j in x if 'Right' in j[0]]
+        left_bc_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
+        left_bc_thresh = [j[1] for j in x if 'Left' in j[0]]
+        ax.plot(right_bc_freqs, right_bc_thresh, marker=8, c='red', linestyle='None')
+        ax.plot(left_bc_freqs, left_bc_thresh, marker=9, c='blue', linestyle='None')
+
+        # Plot formatting
+        ax.set_ylim((-10,120))
+        ax.invert_yaxis()
+        yticks = range(-10,130,10)
+        ax.set_yticks(ticks=yticks)
+        ax.set_ylabel("Hearing Threshold (dB HL)")
+        ax.semilogx()
+        ax.set_xlim((200,9500))
+        ax.set_xticks(ticks=[250,500,1000,2000,4000,8000], labels=[
+            '250','500','1000','2000','4000','8000'])
+        ax.set_xlabel("Frequency (Hz)")
+        ax.axhline(y=25, color="black", linestyle='--', linewidth=1)
+        ax.grid()
+        try:
+            ax.set_title(f"Audiogram for Participant {self.record}")
+        except AttributeError:
+            ax.set_title("No Participant Selected")
 
 
-    def _show_audio(self, record):
-        """ Retrieve figure axis handle and plot audio 
-        """
-        ax1 = self.plot_audio()
-        self.db.audio_ac(record, ax1)
+        # Plot color regions
+        if self.overlay.get() not in ['L', 'M', 'P']:
+            audio_colors = ["gray", "green", "gold", "orange", "mediumpurple", 
+                "lightsalmon"]
+            alpha_val = 0.25
+            degree_dict={
+                'normal': (-10, 25),
+                'mild': (25, 40),
+                'moderate': (40, 55),
+                'moderately-severe': (55, 70),
+                'severe': (70, 90),
+                'profound': (90, 120)
+            }
+            for idx, key in enumerate(degree_dict):
+                coords = [
+                    [0,degree_dict[key][0]], 
+                    [9500,degree_dict[key][0]], 
+                    [9500,degree_dict[key][1]], 
+                    [0,degree_dict[key][1]]
+                ]
+                # Repeat the first point to create a 'closed loop'
+                coords.append(coords[0])
+                # Create lists of x and y values 
+                xs, ys = zip(*coords) 
+                # Fill polygon
+                ax.fill(xs,ys, edgecolor='none', 
+                    facecolor=audio_colors[idx], alpha=alpha_val)
+
+
+        # Plot overlaid fitting range
+        if self.overlay.get() == 'L':
+            overlay_flag = 1
+            coords = [[0,-10], [9500, -10], [9500, 70], [2000, 70], 
+                      [1000, 60], [0, 60]]
+        elif self.overlay.get() == 'M':
+            overlay_flag = 1
+            coords = [[0,-10], [9500, -10], [9500, 80], [2000, 80], 
+                      [1000, 70], [0, 70]]
+        elif self.overlay.get() == 'P':
+            overlay_flag = 1
+            coords = [[0,-10], [9500, -10], [9500, 90], [2000, 90], 
+                      [1000, 80], [0, 80]]
+        if overlay_flag == 1:
+            coords.append(coords[0])
+            xs, ys = zip(*coords)
+            ax.fill(xs, ys, facecolor='black', alpha=0.35)
+            
+            # Reset flag
+            overlay_flag = 0
