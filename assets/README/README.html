@@ -1,17 +1,29 @@
 <h1><strong>Subject Browser</strong></h1>
+<p>Graphical user interface (GUI) for filtering and browsing the participant database.</p>
 <ul>
 <li>Written by: <strong>Travis M. Moore</strong></li>
-<li>Latest version: <strong>Version 0.1.0</strong></li>
+<li>Latest version: <strong>Version 1.0.0</strong></li>
 <li>Created: <strong>July 26, 2022</strong></li>
-<li>Last edited: <strong>August 08, 2023</strong>
+<li>Last edited: <strong>August 17, 2023</strong>
 <br>
 <br></li>
 </ul>
 <hr />
 <h2>Description</h2>
-<p>A lightweight interface to browse the participant database. 
+<p>This application was developed to provide an easy method for (1) filtering the Star database, (2) browsing the filtered selections, and (3) generating descriptive statistics and audiogram plots. </p>
+<ol>
+<li>
+<p>The Subject Browser truncates the Star database to fields pertinent to recruiting, making the database easier to work with. Values are sorted alphanumerically, allowing for easy selection. Because values are stored locally, filtering is instantaneous. </p>
+</li>
+<li>
+<p>You can now see the most pertinent subject information all in one organized display, including the full graphical audiogram. Recommended acoustic coupling, vent sizes, and receiver gains are provided based on Pro Fit logic. Because values are stored locally, browsing is instantaneous.</p>
+</li>
+<li>
+<p>After filtering or importing your participants, the Subject Browser can provide descriptive statistics (e.g., mean age, PTA), as well as individual and mean audiogram plots based on your selected participants. 
 <br>
 <br></p>
+</li>
+</ol>
 <hr />
 <h2>Getting Started</h2>
 <h3>Dependencies</h3>
@@ -20,38 +32,113 @@
 </ul>
 <h3>Installing</h3>
 <ul>
-<li>This is a compiled app; the executable file is stored on Starfile at: \starfile\Public\Temp\MooreT\Custom Software</li>
+<li>This is a compiled app; the executable file is stored on Starfile at: starfile\Public\Temp\MooreT\Custom Software</li>
 <li>Simply copy the executable file and paste to a location on the local machine</li>
 </ul>
 <h3>First Use</h3>
 <ul>
-<li>Double-click to start the application for the first time.
+<li>Double-click to start the application for the first time</li>
+<li>Select a database .csv file using the <strong>File</strong> menu</li>
+<li>Use the dropdowns to enter your filtering criteria</li>
+<li>Click the FILTER RECORDS button on the Filter tab</li>
+<li>Browse filtered records using the Browse tab
 <br>
 <br></li>
 </ul>
 <hr />
-<h2>Tools Menu</h2>
-<h3>Audio Settings</h3>
-<p>The Audio Settings window allows you to select an audio device and assign speakers for playback. </p>
-<p><b>Device Selection.</b> The Audio Settings window displays available audio devices in a table (see lower part of image below). Simply click to choose the desired device. Your selection will be highlighted in blue. </p>
-<p><b>Speaker Assignment.</b> To assign a speaker for playback, enter the speaker/channel number in the entry box (see upper part of image below). Note that you must provide a speaker for each channel in the audio file. For example, if your stimulus has eight channels, you must provide a list of eight speakers. Separate numbers with spaces when providing a list of speakers. For example: <code>1 2 3 4 5 6 7 8</code>.</p>
-<p><img src="audio_settings.png" alt="Audio Settings Window" width="500"/></p>
-<h3>Calibration</h3>
-<p>The Calibration window provides a simple way to calibrate your stimuli using a sound level meter (SLM). </p>
-<p><b>Calibration Stimulus.</b> You can choose to use the built-in white noise, or provide a custom file for the calibration signal (top group in image below).</p>
-<p><b>Playback Controls.</b> Use the "Level (dB)" entry box to adjust the playback level in dB FS (middle group in image below). The "Play" and "Stop" buttons allow you to start and stop the audio playback.</p>
-<p><b>Measured Level.</b> Use a SLM to measure the level of the calibration signal and enter the SLM reading into the "SLM Reading (dB)" entry box (bottom group in image below). Click submit, and the application will calculate an offset so that you can specify presentation levels in dB (whichever type of dB you set the SLM to when measuring). Note that the "Submit" button is disabled until you click the "Play" button.</p>
-<p><img src="calibration.png" alt="Calibration Window" width="400"/>
+<h1>Downloading the Star Database</h1>
+<ol>
+<li>
+<p>Log into the <a href="http://ordsprd.starkey.com:8080/ords/glp/f?p=500:LOGIN:23703464524781:::::">Star database</a> and click the "General Search" tab.</p>
+<p><img src="general_search.png" alt="General Search image" width="600"/></p>
+</li>
+<li>
+<p>Click the "Actions" button, then choose "Select Columns."</p>
+<p><img src="actions_columns.png" alt="Select Columns image" width="600"/></p>
+</li>
+<li>
+<p>In the window that appears, click the double arrows (pointing right) button to move all the columns into the "Display in Report" list box. Then click "Apply."</p>
+<p><img src="select_all_columns.png" alt="Select All Columns image" width="600"/></p>
+</li>
+<li>
+<p>Click the "Actions" button again, then choose "Download."</p>
+<p><img src="actions_download.png" alt="Select Download image" width="600"/></p>
+</li>
+<li>
+<p>Click the "CSV" button in the window that appears and wait for the file to download. </p>
+<p><img src="choose_csv.png" alt="Choose .csv image" width="300"/>
+<br>
+<br></p>
+</li>
+</ol>
+<hr />
+<h1>File Menu</h1>
+<h2>Importing Database Files</h2>
+<p>The Subject Browser can import full downloads from the Star database, as well as filtered database files exported from the Subject Browser. Because a lot of data are removed from the original download upon import, you will need to select the proper type of database from the <code>File</code> menu (i.e., Full DB or Filtered DB). </p>
+<h3>Full Database Imports</h3>
+<p>When importing the full database, you have the option to perform some default filtering to remove:</p>
+<ul>
+<li>Inactive participants</li>
+<li>Participants rated as "poor"</li>
+<li>Starkey employees</li>
+</ul>
+<p>These filters are automatically applied if the "Initial Scrub" checkbox in the "Options" group (in the filter view) is selected. To avoid these filters, deselect the checkbox before importing the full database. </p>
+<p><img src="filter_options.png" alt="Initial Scrub image" width="600"/></p>
+<h3>Filtered Database Imports</h3>
+<p>Filtered databases refer to databases previously exported from the Subject Browser, even if no filters were applied. Note that automatic filtering is not applied when importing filtered databases (i.e., previously exported databases).
 <br>
 <br></p>
 <hr />
-<h2>Compiling from Source</h2>
-<p><code>pyinstaller...</code>
+<h2>Exporting Database Files</h2>
+<p>The Subject Browser allows you to export filtered .csv database files for further work in Excel and for sharing with others. You can also import the exported files later for browsing and/or further filtering. 
 <br>
 <br></p>
 <hr />
-<h2>Contact</h2>
-<p>Please use the contact information below to submit bug reports, feature requests and any other feedback.</p>
+<h2>Exporting Filter Values</h2>
+<p>The Subject Browser allows you to export a list of your custom filters in .csv format for reuse. This is useful after manually setting several filter values that you might want to use again. The values are stored in a .csv file, which you can edit to add/remove or change filter values.</p>
+<p><img src="csv_filters.png" alt="Initial Scrub image" width="600"/></p>
+<p><br>
+<br></p>
+<hr />
+<h2>Importing Filter Values</h2>
+<p>The Subject Browser allows you to import a list of saved filter values to avoid entering filter values by hand, useful when using the same filter values across several recruiting sessions, or to make use of more filters than the number of filtering dropdowns on the interface.  </p>
+<p><img src="csv_filters.png" alt="Initial Scrub image" width="600"/></p>
+<p>Note: Imported filters are not displayed in the filter dropdowns in the filter view. You can still track filtering progress in the Filtering Results text area in the filter view, however. 
+<br>
+<br></p>
+<hr />
+<h2>Resetting the Filters</h2>
+<p>To clear all filter values, navigate to <code>Tools&gt;Reset Filters</code>.<br />
+<br>
+<br></p>
+<hr />
+<h1>Tools Menu</h1>
+<h2>Summary Statistics</h2>
+<p>The Subject Browser will provide descriptive statistics for the currently loaded group of participants by navigating to <code>Tools&gt;Summary Statistics</code>. </p>
+<p><img src="summary_stats.png" alt="Initial Scrub image" width="300"/></p>
+<p>The frequencies used for PTA3 include: 500, 1000, and 2000 Hz.</p>
+<p>The frequencies used for PTA4 include: 500, 1000, 2000, and 4000 Hz.
+<br>
+<br></p>
+<hr />
+<h2>Group Audiogram Plot</h2>
+<p>You can generate a plot showing each individual ear's thresholds, as well as the group mean thresholds by navigating to <code>Tools&gt;Group Audiogram</code>. The resulting plot show individual thresholds in grey (for each ear), with mean thresholds per ear in red and blue (right and left, respectively).</p>
+<p><img src="group_audiogram.png" alt="Initial Scrub image" width="500"/>
+<br>
+<br></p>
+<hr />
+<h1>Compiling from Source</h1>
+<p>Additional data:</p>
+<ul>
+<li>Add README folder</li>
+<li>Add sample_data.csv file</li>
+</ul>
+<p><code>pyinstaller --noconfirm --onefile --windowed --add-data "C:/Users/MooTra/Code/Python/recruiting/assets/README;README/" --add-data "C:/Users/MooTra/Code/Python/recruiting/assets/sample_data.csv;."  "C:/Users/MooTra/Code/Python/recruiting/controller.py"</code>
+<br>
+<br></p>
+<hr />
+<h1>Contact</h1>
+<p>Please use the contact information below to submit bug reports, feature requests and any other feedback. Thank you for using the Subject Browser!</p>
 <ul>
 <li>Travis M. Moore: travis_moore@starkey.com</li>
 </ul>

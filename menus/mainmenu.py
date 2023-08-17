@@ -66,11 +66,16 @@ class MainMenu(tk.Menu):
         ##############
         tools_menu = tk.Menu(self, tearoff=False)
         tools_menu.add_command(
-            label='Plot Group Audio',
+            label="Summary Statistics...",
+            command=self._event('<<ToolsSummaryStats>>')
+        )
+        tools_menu.add_separator()
+        tools_menu.add_command(
+            label='Group Audiogram...',
             command=self._event('<<ToolsPlotGroupAudio>>')
         )
         tools_menu.add_command(
-            label='Plot Ear Specific Group Audio',
+            label='Ear Specific Audiogram...',
             command=self._event('<<ToolsPlotEarSpecificGroupAudio>>')
         )
         tools_menu.add_separator()

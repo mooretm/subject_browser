@@ -232,6 +232,49 @@ class SubDB:
     #     print(f"Remaining candidates: {self.data.shape[0]}\n")
 
 
+    ##########################
+    # Descriptive Statistics #
+    ##########################
+    def descriptive_stats(self):
+        dstats = {}
+
+        # Number of subjects
+        dstats['n'] = int(self.data.shape[0])
+
+        # 3-frequency PTA: 0.5, 1, 2 kHz
+        # Right
+        r_pta3_all = self.data[['RightAC 500', 'RightAC 1000', 
+                                'RightAC 2000']].mean(axis=1)
+        dstats['r_pta3'] = np.round(r_pta3_all.mean(), 1)
+        # Left
+        l_pta3_all = self.data[['LeftAC 500', 'LeftAC 1000', 
+                                'LeftAC 2000']].mean(axis=1)
+        dstats['l_pta3'] = np.round(l_pta3_all.mean(), 1)
+
+        # 4-frequency PTA: 0.5, 1, 2, 4 kHz
+        # Right
+        r_pta4_all = self.data[['RightAC 500', 'RightAC 1000', 
+                                'RightAC 2000', 'RightAC 4000']].mean(axis=1)
+        dstats['r_pta4'] = np.round(r_pta4_all.mean(), 1)
+        # Left
+        l_pta4_all = self.data[['LeftAC 500', 'LeftAC 1000', 
+                                'LeftAC 2000', 'LeftAC 4000']].mean(axis=1)
+        dstats['l_pta4'] = np.round(l_pta4_all.mean(), 1)
+
+        # Age
+        dstats['age_mean'] = np.round(self.data['Age'].mean(axis=0), 1)
+        dstats['age_max'] = int(self.data['Age'].max())
+        dstats['age_min'] = int(self.data['Age'].min())
+
+        # MoCA Total Score
+        dstats['moca_mean'] = np.round(
+            self.data['MoCA Total Score'].mean(axis=0), 1)
+        dstats['moca_min'] = int(self.data['MoCA Total Score'].min())
+        dstats['moca_max'] = int(self.data['MoCA Total Score'].max())
+
+        return dstats
+
+
     ######################
     # Plotting Functions #
     ######################
@@ -289,7 +332,7 @@ class SubDB:
         df_left.columns = [int(x.split()[1]) for x in df_left.columns]
         # Concatenate left/right audiogram thresholds dfs
         thresholds = pd.concat([df_right, df_left]).reset_index(drop=True)
-        
+
         return thresholds, df_right, df_left
 
 
@@ -309,9 +352,14 @@ class SubDB:
             mask = np.isfinite(vals)
             ax.plot(vals[mask].index, vals[mask], color='dimgrey')
 
-        # Plot average thresholds
-        avg = thresholds.mean()
-        ax.plot(avg.index, avg, color='black', linestyle='--', linewidth=5)
+        # Plot (collapsed) average thresholds
+        #avg = thresholds.mean()
+        #ax.plot(avg.index, avg, color='black', linestyle='--', linewidth=5)
+        
+        # Plot (ear-specific) average thresholds
+        ax.plot(right.columns, right.mean(), c='red', lw=4)
+        ax.plot(left.columns, left.mean(), c='blue', lw=4)
+
         plt.show()
 
 
@@ -350,7 +398,6 @@ class SubDB:
         ax.set_xlabel("Frequency (Hz)")
         ax.axhline(y=25, color="black", linestyle='--', linewidth=1)
         ax.grid()
-        #ax.set_title(f"Study Audiograms (n={n})")
         return ax
 
 

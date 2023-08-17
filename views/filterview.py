@@ -100,6 +100,7 @@ class FilterView(ttk.Frame):
                                           pady=20)
 
         # Text widget for displaying filtering results
+        ttk.Label(frm_output, text='Filtering Results').pack()
         self.txt_output = tk.Text(frm_output, width=50)
         self.txt_output.pack(side='left', fill="both", anchor="w", 
                              expand=True)

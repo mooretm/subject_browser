@@ -141,6 +141,7 @@ class Application(tk.Tk):
             '<<ToolsReset>>': lambda _: self.filter_view.clear_filters(),
             '<<ToolsPlotGroupAudio>>': lambda _: self.db.plot_group_audio(),
             '<<ToolsPlotEarSpecificGroupAudio>>': lambda _: self.db.plot_ear_specific_group_audio(),
+            '<<ToolsSummaryStats>>': lambda _: self.summary_stats(),
 
             # Help menu
             '<<Help>>': lambda _: self._show_help(),
@@ -372,7 +373,7 @@ class Application(tk.Tk):
         self.filter_view.txt_output.insert(tk.END,
             f"Candidates before filtering: {str(self.db.data.shape[0])}\n\n")
 
-        print(f"\ncontroller: Filter dict: {filter_dict.items()}")
+        #print(f"\ncontroller: Filter dict: {filter_dict.items()}")
 
         # Extract filter dict values and pass to db filter function
         try:
@@ -435,6 +436,38 @@ class Application(tk.Tk):
     ########################
     # Tools Menu Functions #
     ########################
+    def summary_stats(self):
+        """ Display messagebox with descriptive stats for remaining 
+            participants.
+        """
+        # Calculate descriptive stats
+        dstats = self.db.descriptive_stats()
+
+        # Create list of descriptive stats
+        msg = [
+            f"Number of subjects: {dstats['n']}",
+
+            f"Mean Age: {dstats['age_mean']} (min={dstats['age_min']}, " + 
+                f"max={dstats['age_max']})",
+
+            f"Mean MoCA: {dstats['moca_mean']} (min={dstats['moca_min']}, " + 
+                f"max={dstats['moca_max']})",
+
+            f"Right PTA3: {dstats['r_pta3']} dB HL" + 
+                f"\nLeft PTA3: {dstats['l_pta3']} dB HL",
+            
+            f"Right PTA4: {dstats['r_pta4']} dB HL" +
+                f"\nLeft PTA4: {dstats['l_pta4']} dB HL",
+        ]
+
+        # Join list, separated by new line
+        msg = '\n\n'.join(msg)
+
+        messagebox.showinfo(
+            title="Summary Statistics",
+            message="Descriptive Statistics",
+            detail=msg
+        )
 
 
     ############################
@@ -481,7 +514,7 @@ class Application(tk.Tk):
     def _show_help(self):
         """ Create html help file and display in default browser
         """
-        print("controller: Looking for help file in compiled " +
+        print("\ncontroller: Looking for help file in compiled " +
             "version temp location...")
         help_file = general.resource_path('README\\README.html')
         file_exists = os.access(help_file, os.F_OK)
