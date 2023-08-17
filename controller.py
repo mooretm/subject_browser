@@ -54,7 +54,7 @@ class Application(tk.Tk):
         #############
         self.NAME = 'Subject Browser'
         self.VERSION = '1.0.0'
-        self.EDITED = 'August 16, 2023'
+        self.EDITED = 'August 17, 2023'
 
         # Create menu settings dictionary
         self._app_info = {
@@ -100,9 +100,6 @@ class Application(tk.Tk):
         self._load_sessionpars()
         self.sessionpars_model.save()
 
-        # Create filter model
-        #self.filtermodel = filtermodel.FilterList()
-
         # Create sample database model
         self._create_sample_db()
 
@@ -133,7 +130,6 @@ class Application(tk.Tk):
         # Create callback dictionary
         event_callbacks = {
             # File menu
-            #'<<FileSession>>': lambda _: self._show_session_dialog(),
             '<<FileImportFullDB>>': lambda _: self._import_full(),
             '<<FileImportFilteredDB>>': lambda _: self._import_filtered(),
             '<<FileExportDB>>': lambda _: self.db.write(), #self._export_db(),
@@ -304,7 +300,6 @@ class Application(tk.Tk):
             comboboxes with values
         """
         # Get imported filter values as dict
-        #filter_dict = self.filtermodel.import_filter_dict()
         filter_dict = self.csvmodel.import_filter_dict()
         self.on_filter(filter_dict)
 
@@ -354,7 +349,8 @@ class Application(tk.Tk):
                 except ValueError:
                     # Cannot convert string to float
                     pass
-
+        
+        # DEBUG:
         # print(f"\ncontroller: key = {key} \
         #         \nsearch term = {filter_dict[key][0]} \
         #         \noperater = {filter_dict[key][1]} \
@@ -397,9 +393,7 @@ class Application(tk.Tk):
             messagebox.showerror(title="Filtering Error",
                 message="Cannot compare different data types!",
                 detail="The search term data type does not match the " +
-                    "database data type. This can happen when importing " +
-                    "a filtered database, or faulty filtering code. " +
-                    "Aborting.")
+                    "database data type.")
 
         # Update tree widget after filtering
         self.browser_view.load_tree()

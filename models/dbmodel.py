@@ -187,7 +187,8 @@ class SubDB:
     # Filtering Functions #
     #######################
     def filter(self, colname, operator, value):
-        # Filter
+        """ Apply filters to data.
+        """
         if operator == "equals":
             self.data = self.data[self.data[colname] == value]
         if operator == "does not equal":
@@ -235,7 +236,7 @@ class SubDB:
     # Plotting Functions #
     ######################
     def get_thresholds(self, sub_id):
-        """ Make dictionaries for air and bone conduction thresholds.
+        """ Make dictionaries of air and bone conduction thresholds.
         """
         # Get AC thresholds
         sides = ["RightAC", "LeftAC"]
@@ -265,81 +266,6 @@ class SubDB:
                     bc[side + ' ' + str(freq)] = None
 
         return ac, bc
-
-
-    # def audio_ac(self, sub_id, ax=None):
-    #     if ax is None:
-    #         ax = plt.gca()
-
-    #     # Get AC and BC thresholds
-    #     ac, bc = self.get_thresholds(sub_id)
-    #     thresholds = (ac, bc)
-
-    #     # Remove "None" values from thresholds
-    #     for ii in range(0,2):
-    #         for key, value in dict(thresholds[ii]).items():
-    #             if value is None:
-    #                 del thresholds[ii][key]
-
-    #     # Plot AC thresholds
-    #     x = list(ac.items())
-    #     right_ac_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
-    #     right_ac_thresh = [j[1] for j in x if 'Right' in j[0]]
-    #     left_ac_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
-    #     left_ac_thresh = [j[1] for j in x if 'Left' in j[0]]
-    #     ax.plot(right_ac_freqs, right_ac_thresh, 'ro-')
-    #     ax.plot(left_ac_freqs, left_ac_thresh, 'bx-')
-
-    #     # Plot BC thresholds
-    #     x = list(bc.items())
-    #     right_bc_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
-    #     right_bc_thresh = [j[1] for j in x if 'Right' in j[0]]
-    #     left_bc_freqs = [int(j[0].split()[1]) for j in x if 'Left' in j[0]]
-    #     left_bc_thresh = [j[1] for j in x if 'Left' in j[0]]
-    #     ax.plot(right_bc_freqs, right_bc_thresh, marker=8, c='red', linestyle='None')
-    #     ax.plot(left_bc_freqs, left_bc_thresh, marker=9, c='blue', linestyle='None')
-
-    #     # Plot formatting
-    #     ax.set_ylim((-10,120))
-    #     ax.invert_yaxis()
-    #     yticks = range(-10,130,10)
-    #     ax.set_yticks(ticks=yticks)
-    #     ax.set_ylabel("Hearing Threshold (dB HL)")
-    #     ax.semilogx()
-    #     ax.set_xlim((200,9500))
-    #     ax.set_xticks(ticks=[250,500,1000,2000,4000,8000], labels=[
-    #         '250','500','1000','2000','4000','8000'])
-    #     ax.set_xlabel("Frequency (Hz)")
-    #     ax.axhline(y=25, color="black", linestyle='--', linewidth=1)
-    #     ax.grid()
-    #     ax.set_title(f"Audiogram for Participant {sub_id}")
-
-    #     # Plot color regions
-    #     audio_colors = ["gray", "green", "gold", "orange", "mediumpurple", 
-    #         "lightsalmon"]
-    #     alpha_val = 0.25
-    #     degree_dict={
-    #         'normal': (-10, 25),
-    #         'mild': (25, 40),
-    #         'moderate': (40, 55),
-    #         'moderately-severe': (55, 70),
-    #         'severe': (70, 90),
-    #         'profound': (90, 120)
-    #     }
-    #     for idx, key in enumerate(degree_dict):
-    #         coords = [
-    #             [0,degree_dict[key][0]], 
-    #             [9500,degree_dict[key][0]], 
-    #             [9500,degree_dict[key][1]], 
-    #             [0,degree_dict[key][1]]
-    #         ]
-    #         # Repeat the first point to create a 'closed loop'
-    #         coords.append(coords[0])
-    #         # Create lists of x and y values 
-    #         xs, ys = zip(*coords) 
-    #         # Fill polygon
-    #         ax.fill(xs,ys, edgecolor='none', 
-    #             facecolor=audio_colors[idx], alpha=alpha_val)
 
 
     #########################
@@ -385,7 +311,7 @@ class SubDB:
 
         # Plot average thresholds
         avg = thresholds.mean()
-        ax.plot(avg.index, avg, color='red', linestyle='--', linewidth=5)
+        ax.plot(avg.index, avg, color='black', linestyle='--', linewidth=5)
         plt.show()
 
 
@@ -432,7 +358,9 @@ class SubDB:
     # Acoustic Coupling Functions #
     ###############################
     def coupling(self, sub_id):
-        """ Calculate Pro Fit recommended coupling and vent size.
+        """ Calculate Pro Fit recommended coupling, receiver gain, 
+            and vent size. Based on logic from Pro Fit provided by 
+            Laura Woodworth. 
         """
         # Get subject thresholds
         ac, bc = self.get_thresholds(sub_id)
@@ -531,7 +459,7 @@ class SubDB:
         self._vars = _vars
 
         # Attempt to parse study name and dates
-        # Multiple pieces of information in a single cell
+        # Multiple pieces of information in a single cell...
         latest_study = self.data[self.data['Subject Id'] == record]['Latest Study'].values[0]
         study_dates = [z.split(')')[0] for z in latest_study.split('(') if ')' in z]
         try:
@@ -542,6 +470,7 @@ class SubDB:
         self._vars['study_dates'].set(study_dates)
         self._vars['study_info'].set(study_info)
 
+        # Add matrix, coupling and vent size to _vars
         try:
             matrix, coupling, vent_size = self.coupling(record)
             self._vars['r_rec_coupling'].set(coupling['Right'])
@@ -567,6 +496,8 @@ class SubDB:
             'l_receiver': 'Left Ric Cable Size',
         }
 
+        # Add fields from dict to _vars, and update those values.
+        # This updates the labels on the GUI due to use of tk.StringVars
         for key in dict.keys():
             try:
                 if dict[key] in ['Age', 'Miles From Starkey', 'Right Ric Cable Size', 'Left Ric Cable Size']:

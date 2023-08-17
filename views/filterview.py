@@ -47,9 +47,6 @@ class FilterView(ttk.Frame):
         #################
         # Create Frames #
         #################
-        # Allow expansion of main frame
-        self.columnconfigure(index=0, weight=1)
-        
         # Custom widget styles
         style = ttk.Style()
         style.configure("rec.TLabel", foreground='green')
@@ -58,30 +55,29 @@ class FilterView(ttk.Frame):
         #################
         # Create Frames #
         #################
-        # Frame options
-        options = {'padx':10, 'pady':10}
-
         # Main frame
         frm_filter = ttk.Frame(self)
-        frm_filter.grid(row=0, column=0, sticky='nsew')
+        frm_filter.pack(fill="both", expand=True, side="left")
+        #frm_filter.grid(row=0, column=0, sticky='nsew')
         # Set columns to expand
-        frm_filter.columnconfigure(index=1, weight=1)
-        frm_filter.columnconfigure(index=2, weight=1)
-        frm_filter.columnconfigure(index=3, weight=1)
+        #frm_filter.columnconfigure(index=1, weight=1)
+        #frm_filter.columnconfigure(index=2, weight=1)
+        #frm_filter.columnconfigure(index=3, weight=1)
 
         # Options frame
         frm_options = ttk.LabelFrame(frm_filter, text="Options")
         frm_options.grid(row=2, column=1, padx=10, pady=(10,0),
-            sticky='nsew')
+           sticky='nsew')
         # Set columns to expand
-        frm_options.columnconfigure(index=1, weight=1)
+        #frm_options.columnconfigure(index=1, weight=1)
         
         # Output textbox frame
         frm_output = ttk.Frame(self)
-        frm_output.grid(row=21, column=0, **options, 
-            sticky='nsew')
-        # Set columns to expand
-        frm_output.columnconfigure(index=1, weight=1)
+        frm_output.pack(fill="both", expand=True, side="right", pady=10, padx=(0,10))
+        # frm_output.grid(row=21, column=0, **options, 
+        #     sticky='nsew')
+        # # Set columns to expand
+        # frm_output.columnconfigure(index=1, weight=1)
 
 
         ############
@@ -100,17 +96,19 @@ class FilterView(ttk.Frame):
 
         # Filter button
         ttk.Button(frm_filter, text="Filter Records", 
-            command=self._on_filter).grid(row=20, column=2, sticky='ew')
+            command=self._on_filter).grid(row=20, column=2, sticky='ew', 
+                                          pady=20)
 
         # Text widget for displaying filtering results
-        self.txt_output = tk.Text(frm_output, height=10)
-        self.txt_output.grid(row=1, column=1, sticky='nsew')
+        self.txt_output = tk.Text(frm_output, width=50)
+        self.txt_output.pack(side='left', fill="both", anchor="w", 
+                             expand=True)
 
         # Scrollbar for text widget
         scroll = ttk.Scrollbar(frm_output, orient='vertical', 
             command=self.txt_output.yview)
-        scroll.grid(row=1, column=2, sticky='ns')
-
+        scroll.pack(side='right', anchor="e", fill='y')
+        #scroll.grid(row=1, column=2, sticky='ns')
         self.txt_output['yscrollcommand'] = scroll.set
 
 
@@ -118,7 +116,7 @@ class FilterView(ttk.Frame):
         # Create Filtering Comboboxes #
         ###############################
         # Specify number of filter rows
-        num_fields = 6
+        num_fields = 9
 
         # Attribute combobox
         self.attrib_vars = []
@@ -192,16 +190,15 @@ class FilterView(ttk.Frame):
 
 
     def clear_output(self):
+        """ Clear any existing text from the filter display 
+            textbox.
+        """
         self.txt_output.delete('1.0', tk.END)
 
 
     def clear_filters(self):
         """ Clear all values from the filter comboboxes.
-            Reset filter dict to empty.
         """
-        # Clear out current filter dict
-        #self.filter_dict = {}
-
         # Delete any output from textbox
         self.clear_output()
 
@@ -213,29 +210,6 @@ class FilterView(ttk.Frame):
 
         # Set the focus to the upper left combobox
         self.attrib_cbs[0].focus_set()
-
-
-    # def _load_filters(self, filter_dict):
-    #     """ Populate comboboxes with values from provided dict.
-            
-    #         Retired function - no longer called. 
-    #     """
-    #     # Clear any textbox output
-    #     self.txt_output.delete('1.0', tk.END)
-
-    #     # Populate comboxes with new values
-    #     try:
-    #         for ii in filter_dict:
-    #             self.attrib_cbs[int(ii)].set(filter_dict[ii][0])
-    #             self.op_cbs[int(ii)].set(filter_dict[ii][1])
-    #             self.value_cbs[int(ii)].set(filter_dict[ii][2])
-    #     except IndexError:
-    #         messagebox.showinfo(title="So Many Filters",
-    #             message="The number of imported filters exceeds the " +
-    #                 "number of filter dropdowns!",
-    #             detail="All filters will still be applied, but they " +
-    #                 "will not be displayed.")
-    #         raise IndexError
 
 
     ##############################
@@ -327,76 +301,3 @@ class FilterView(ttk.Frame):
                     )
                     return
         return filter_dict
-
-    # def _make_filter_dict(self):
-    #     """ Create a dictionary of filter values from combobox values. 
-    #         Check for missing values and skipped rows.
-    #     """
-    #     all_data = []
-    #     self.clear_output()
-
-    #     for ii in range(0, len(self.attrib_cbs)):
-    #         # Check for any empty values in a given row
-    #         if (not self.attrib_vars[ii].get()) \
-    #             or (not self.op_vars[ii].get()) \
-    #             or (not self.value_vars[ii].get()):
-    #             # Check whether entire row is empty
-    #             if (not self.attrib_vars[ii].get()) \
-    #                 and (not self.op_vars[ii].get()) \
-    #                 and (not self.value_vars[ii].get()):
-    #                 pass # do nothing if entire row is empty
-    #             else:
-    #                 # If some values in a row are missing, 
-    #                 # display message and exit
-    #                 print("Missing values!")
-    #                 messagebox.showerror(title="Missing Values",
-    #                     message="There are missing values!",
-    #                     detail="Please provide all filter parameters " +
-    #                         "for a given row."
-    #                 )
-    #                 return
-    #         else:
-    #             # Create list from values if 'contains' operator
-    #             # Create new 'value' variable because tk.StringVar
-    #             # cannot hold a list
-    #             if self.op_vars[ii].get() == "contains":
-    #                 value = self.value_vars[ii].get().split()
-    #                 print(value)
-    #                 # Convert each list element to float, if possible
-    #                 try:
-    #                     value = [float(x) for x in value]
-    #                     print(value)
-    #                 except ValueError:
-    #                     # Cannot convert string to float
-    #                     pass
-    #             else:
-    #                 value = self.value_vars[ii].get()
-    #                 # Convert value to float, if possible
-    #                 try:
-    #                     value = float(value)
-    #                 except ValueError:
-    #                     # Cannot convert string to float
-    #                     pass
-
-    #             # If all values are present in a given row, append to list
-    #             all_data.append(
-    #                 (
-    #                 self.attrib_vars[ii].get(), 
-    #                 self.op_vars[ii].get(), 
-    #                 value
-    #                 )
-    #             )
-    #             try:
-    #                 # Update dictionary with list by index
-    #                 #self.filter_dict[ii].set(all_data[ii])
-    #                 self.filter_dict[ii] = all_data[ii]
-    #             except IndexError:
-    #                 # If indexes do not match, there was an empty row 
-    #                 # between rows with values: display message and 
-    #                 # exit
-    #                 messagebox.showerror(title="Empty Rows",
-    #                     message="One or more rows has been skipped!",
-    #                     detail="There cannot be empty rows between rows " +
-    #                         "with values."
-    #                 )
-    #                 return

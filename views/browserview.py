@@ -52,10 +52,6 @@ class BrowserView(ttk.Frame):
             for key, spec in fields.items()
         }
 
-        # Blank audiogram thresholds
-        #ac = {'RightAC 250': 999}
-
-
         # Change weights so widgets "float" in the center
         # of the frame
         for ii in [0, 1, 5, 10, 15]:
@@ -326,12 +322,17 @@ class BrowserView(ttk.Frame):
 
 
     def plot_audiogram(self, ac, bc, ax=None):
+        """ Plot audiogram data on axis returned from _create_canvas().
+        """
         if ax is None:
             #ax = plt.gca()
             ax = self._create_canvas()
 
+        # Variable to determine whether or not to apply fitting
+        # range overlay. 
         overlay_flag = 0
 
+        # Create tuple of air and bone thresholds
         thresholds = (ac, bc)
 
         # Remove "None" values from thresholds
@@ -340,6 +341,9 @@ class BrowserView(ttk.Frame):
                 if value is None:
                     del thresholds[ii][key]
 
+        ###################
+        # Plot Thresholds #
+        ###################
         # Plot AC thresholds
         x = list(ac.items())
         right_ac_freqs = [int(j[0].split()[1]) for j in x if 'Right' in j[0]]
@@ -358,7 +362,9 @@ class BrowserView(ttk.Frame):
         ax.plot(right_bc_freqs, right_bc_thresh, marker=8, c='red', linestyle='None')
         ax.plot(left_bc_freqs, left_bc_thresh, marker=9, c='blue', linestyle='None')
 
-        # Plot formatting
+        ###################
+        # Plot Formatting #
+        ###################
         ax.set_ylim((-10,120))
         ax.invert_yaxis()
         yticks = range(-10,130,10)
@@ -376,8 +382,9 @@ class BrowserView(ttk.Frame):
         except AttributeError:
             ax.set_title("No Participant Selected")
 
-
-        # Plot color regions
+        ######################
+        # Plot Color Regions #
+        ######################
         if self.overlay.get() not in ['L', 'M', 'P']:
             audio_colors = ["gray", "green", "gold", "orange", "mediumpurple", 
                 "lightsalmon"]
@@ -405,8 +412,10 @@ class BrowserView(ttk.Frame):
                 ax.fill(xs,ys, edgecolor='none', 
                     facecolor=audio_colors[idx], alpha=alpha_val)
 
-
-        # Plot overlaid fitting range
+        ######################
+        # Plot Fitting Range #
+        ######################
+        # Get overlay value from radio buttons
         if self.overlay.get() == 'L':
             overlay_flag = 1
             coords = [[0,-10], [9500, -10], [9500, 70], [2000, 70], 
@@ -423,6 +432,3 @@ class BrowserView(ttk.Frame):
             coords.append(coords[0])
             xs, ys = zip(*coords)
             ax.fill(xs, ys, facecolor='black', alpha=0.35)
-            
-            # Reset flag
-            overlay_flag = 0

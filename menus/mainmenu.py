@@ -18,8 +18,6 @@ class MainMenu(tk.Menu):
 
 
     def _bind_accelerators(self):
-        #self.bind_all('<space>', self._event('<<PlaybackStart>>'))
-        #self.bind_all('<Control-c>', self._event('<<PlaybackStop>>'))
         self.bind_all('<Control-q>', self._event('<<FileQuit>>'))
 
 
@@ -84,24 +82,6 @@ class MainMenu(tk.Menu):
         self.add_cascade(label="Tools", menu=tools_menu)
 
 
-        #################
-        # Playback Menu #
-        #################
-        # playback_menu = tk.Menu(self, tearoff=False)
-        # playback_menu.add_command(
-        #     label="Start Audio",
-        #     command=self._event('<<PlaybackStart>>'),
-        #     accelerator='Spacebar'
-        # )
-        # playback_menu.add_separator()
-        # playback_menu.add_command(
-        #     label="Stop Audio",
-        #     command=self._event('<<PlaybackStop>>'),
-        #     accelerator='Ctrl+C'
-        # )
-        # self.add_cascade(label='Playback', menu=playback_menu)
-
-
         #############
         # Help Menu #
         #############
@@ -134,7 +114,7 @@ class MainMenu(tk.Menu):
         about_detail = (
             'Written by: Travis M. Moore\n' +
             'Version {}\n'.format(self._app_info['version']) +
-            'Created: July 14, 2023\n'
+            'Created: July 26, 2022\n'
             'Last edited: {}'.format(self._app_info['last_edited'])
         )
         messagebox.showinfo(
