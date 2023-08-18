@@ -54,7 +54,7 @@ class Application(tk.Tk):
         #############
         self.NAME = 'Subject Browser'
         self.VERSION = '1.0.0'
-        self.EDITED = 'August 17, 2023'
+        self.EDITED = 'August 18, 2023'
 
         # Create menu settings dictionary
         self._app_info = {
