@@ -333,6 +333,8 @@ class SubDB:
         # Concatenate left/right audiogram thresholds dfs
         thresholds = pd.concat([df_right, df_left]).reset_index(drop=True)
 
+        thresholds.to_csv('audiogram_thresholds.csv', index=False)
+
         return thresholds, df_right, df_left
 
 
